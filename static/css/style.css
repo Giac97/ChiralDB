@@ -1,0 +1,16 @@
+h1 {
+    color: darkblue;
+    font-size: 60px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+body {
+    background: #f4f4f4;
+}
+
+#demo {
+    color: blueviolet;
+    font-size: 13px;
+    font-family: Helvetica;
+}
+
