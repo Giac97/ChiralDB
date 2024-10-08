@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+
+<div class="card">
+    <div class="card-body">
+    <h5 class="card-title line-1 anim-typewriter">{{post.title}}</h5>
+    <h6 class="card-subtitle mb-2 text-muted"><strong>By:</strong> {{post.author}}</h6>
+    
+    <p class="card-text">{{post.content}}</p>
+    <p class="card-link">{{post.date_posted}}</p>
+    </div>
+</div>
+<br/>
+<a class="btn btn-primary" href = "{{url_for('posts')}}">Back to post list</a>
+
+
+{% endblock%}

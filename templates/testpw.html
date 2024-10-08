@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+{% endfor %}
+    {%if email%}
+        <h1>Email: {{email}}!</h1>
+        <h1>Password: {{password}}!</h1>
+        <h2>
+            I found this info
+        </h2>
+        <blockquote class="blockquote">
+            <p>Name: {{pw_to_check.first_name}}</p>
+            <p>Last Name: {{pw_to_check.last_name}}</p>
+            <p>Email: {{pw_to_check.email}}</p>
+            <p>PW: {{pw_to_check.password_hash}}</p>
+
+          </blockquote>
+          <br/>
+
+          {% if passed %}
+          <div class="spinner-grow text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Password correct</p>
+
+          {% else %}
+          <div class="spinner-grow text-danger" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Password wrong</p>
+
+          {% endif %}
+    {%else%}
+        <h1>What's your Email?</h1>
+        <br/>
+        <form method="POST">
+            {{form.hidden_tag()}}
+            {{form.email.label(
+                class="form-label"
+            )}}
+            {{form.email(
+                class="form-control",
+            )}}
+            <br/>
+            {{form.password_hash.label(
+                class="form-label"
+            )}}
+            {{form.password_hash(
+                class="form-control",
+            )}}
+            <br/>
+            {{form.submit(
+                class="btn btn-secondary"
+            )}}
+        </form>
+    {%endif%}
+{% endblock content %}

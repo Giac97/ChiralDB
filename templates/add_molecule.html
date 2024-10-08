@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{%if name%}
+<h1>Hello {{name|title}}!</h1>
+{%else%}
+<h1>User List</h1>
+<br />
+
+<div class = "shadow p-3 mb-5 bg-body rounded">
+
+<form method="POST">
+
+
+    {{form.hidden_tag()}}
+
+    {{form.name.label(
+    class="form-label"
+    )}}
+
+    {{form.name(
+    class="form-control",
+    placeholder="John"
+    )}}
+
+
+    <br />
+
+    {{form.composition.label(
+    class="form-label"
+    )}}
+
+    {{form.composition(
+    class="form-control",
+    placeholder="Doe"
+    )}}
+    <br />
+
+    {{form.author.label(
+    class="form-label"
+    )}}
+
+    {{form.author(
+    class="form-control",
+    placeholder="Doe"
+    )}}
+    <br />
+
+    {{form.publication.label(
+    class="form-label"
+    )}}
+
+    {{form.publication(
+    class="form-control",
+    rows = '5'
+    )}}
+
+    <br />
+
+    {{form.raw_data.label(
+    class="form-label"
+    )}}
+
+    {{form.raw_data()}}
+
+
+    <br />
+    {{form.submit(
+    class="btn btn-secondary"
+    )}}
+</form>
+</div>
+
+
+
+{%endif%}
+{% endblock content %}

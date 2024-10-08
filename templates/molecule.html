@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{molecule.name}}</h5>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Composition:</strong> {{molecule.composition}}</h6>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{molecule.author}}</h6>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Relevant publications:</strong> {{molecule.publication}}</h6>
+
+
+    </div>
+</div>
+<br />
+
+<div class="container">
+    <div class="row gx-5">
+        <div class = "col">
+            <h2>Absorption Spectrum</h2>
+            {% if absorption_plot_div %}
+            <div>{{ absorption_plot_div|safe }}</div>
+            {% else %}
+            <p>No absorption data to display.</p>
+            {% endif %}
+        </div>
+        
+        <div class = "col">
+            <h2>ECD Spectrum</h2>
+            {% if ecd_plot_div %}
+    
+            <div>{{ ecd_plot_div|safe }}</div>
+    
+            {% else %}
+            <p>No ECD data to display.</p>
+            {% endif %}
+        </div>
+        
+
+    </div>
+</div>
+
+<a class="btn btn-primary" href="{{url_for('all_molecules')}}">Back to molecules list</a>
+
+
+{% endblock%}
