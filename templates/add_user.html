@@ -71,6 +71,30 @@
 
 
     <br />
+
+    {{form.password_hash.label(
+    class="form-label"
+    )}}
+
+    {{form.password_hash(
+    class="form-control",
+
+    )}}
+
+
+    <br />
+
+    {{form.password_hash2.label(
+    class="form-label"
+    )}}
+
+    {{form.password_hash2(
+    class="form-control",
+
+    )}}
+
+
+    <br />
     {{form.submit(
     class="btn btn-secondary"
     )}}
@@ -85,6 +109,8 @@
             <th scope="col">First Name</th>
             <th scope="col">Last Name</th>
             <th scope="col">Email</th>
+            <th scope="col">Favourite Color</th>
+            <th scope="col">x</th>
         </tr>
     </thead>
     <tbody>
@@ -95,6 +121,7 @@
             <td>{{our_user.last_name}}</td>
             <td>{{our_user.email}}</td>
             <td>{{our_user.favourite_color}}</td>
+            <th scope="row"><a href="{{url_for('delete', id = our_user.id)}}">Delete</a></th>
 
         </tr>
 

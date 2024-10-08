@@ -71,9 +71,15 @@
 
 
     <br />
+    <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+
     {{form.submit(
-    class="btn btn-secondary"
+    class="btn btn-primary"
     )}}
+
+    <a href="{{url_for('delete', id = name_to_update.id)}}" class = "btn btn-warning">Delete </a>
+    <a href="{{url_for('add_user')}}" class = "btn btn-secondary">Return </a>
+    </div>
 </form>
 </div>
 
