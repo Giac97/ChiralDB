@@ -39,4 +39,16 @@ body {
 @keyframes blinkTextCursor{
   from{border-right-color: rgba(255,255,255,.75);}
   to{border-right-color: transparent;}
+}ù
+
+.plot-container {
+    width: 100%;
+    height: 100%; /* Allow the container to take the full height */
+    position: relative; /* Set position relative to allow absolute positioning */
+}
+
+.plotly-plot {
+    width: 100% !important;  /* Ensure it takes full width */
+    height: 100% !important; /* Ensure it takes full height */
+    position: absolute; /* Set to absolute positioning for resizing */
 }

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect
+from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, FileField
 from wtforms.validators import data_required, equal_to, length
@@ -275,11 +275,52 @@ def post(id):
     post = Posts.query.get_or_404(id)
     return render_template("post.html", post= post)
 
-@app.route("/posts/edit/<int:id>")
+
+
+@app.route("/posts/edit/<int:id>", methods = ['GET', 'POST'])
 def edit_post(id):
     post = Posts.query.get_or_404(id)
     form = PostForm()
+    #you viewing or submitting a change?
+    if form.validate_on_submit(): #we clicked and want to validate
+        post.title = form.title.data
+        post.author = form.author.data
+        post.content = form.content.data
+        post.slug = form.slug.data
+        #update db
+        db.session.add(post)
+        db.session.commit()
+        flash("Post updated!")
+        return redirect(url_for('post', id = post.id))
+    #if landing there
+    form.title.data = post.title
+    form.author.data = post.author
+    form.slug.data = post.slug
+    form.content.data = post.content
+    return render_template("edit_post.html", form = form)
 
+#delete posts
+@app.route("/posts/delete/<int:id>")
+def delete_post(id):
+    post_to_delete = Posts.query.get_or_404(id)
+    
+    try:
+        db.session.delete(post_to_delete)
+        db.session.commit()
+        flash("Blog post was deleted")
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template("posts.html", posts = posts)
+        
+    except:
+        flash("Whopso, problem deleting post")
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template("posts.html", posts = posts)
+
+
+
+###########################################
+#######Below Molecule Stuff################
+###########################################
 
 @app.route("/molecule/add_molecule", methods = ['GET', 'POST'])
 def add_molecule():
@@ -350,14 +391,12 @@ def molecule(id):
     )
 
     absorption_layout = go.Layout(
-        title=f'Absorption Spectrum for {molecule.name}',
         xaxis=dict(title='Wavelength [nm]'),
         yaxis=dict(title='Absorption [Abs]'),
-        hovermode='closest'
+        hovermode='closest',
+        autosize=True
     )
 
-    absorption_figure = go.Figure(data=[absorption_trace], layout=absorption_layout)
-    absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn')
 
     # Create Plotly graph data for ECD
     ecd_trace = go.Scatter(
@@ -369,13 +408,17 @@ def molecule(id):
     )
 
     ecd_layout = go.Layout(
-        title=f'ECD Spectrum for {molecule.name}',
         xaxis=dict(title='Wavelength [nm]'),
         yaxis=dict(title='ECD [mdeg]'),
-        hovermode='closest'
+        hovermode='closest',
+        autosize=True
     )
 
     ecd_figure = go.Figure(data=[ecd_trace], layout=ecd_layout)
-    ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn')
+    absorption_figure = go.Figure(data=[absorption_trace], layout=absorption_layout)
+
+    absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+
 
     return render_template("molecule.html", molecule=molecule, absorption_plot_div=absorption_plot_div, ecd_plot_div=ecd_plot_div)
