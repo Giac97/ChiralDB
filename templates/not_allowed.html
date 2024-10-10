@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 class="a1">Not allowed</h1>
+
+    {% if what == "molecule"  %}
+        <p>
+            You are not allowed to delete a molecule created by someone else!
+        </p>
+
+ 
+    {% else%}
+    <p>
+        YOu are not allowed to delete a post created by someone else!
+    </p>
+    {% endif %}
+{% endblock content %}

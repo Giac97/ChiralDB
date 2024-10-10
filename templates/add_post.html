@@ -29,18 +29,6 @@
 
 
     <br />
-
-    {{form.author.label(
-    class="form-label"
-    )}}
-
-    {{form.author(
-    class="form-control",
-    placeholder="Doe"
-    )}}
-
-
-    <br />
     {{form.hidden_tag()}}
 
     {{form.slug.label(
@@ -54,6 +42,8 @@
 
 
     <br />
+
+
     {{form.hidden_tag()}}
 
     {{form.content.label(
@@ -73,5 +63,7 @@
     class="btn btn-secondary"
     )}}
 </form>
+{{ckeditor.load()}}
+{{ckeditor.config(name = 'content')}}
 </div>
 {% endblock content %}

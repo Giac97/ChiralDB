@@ -28,17 +28,6 @@
 
 
     <br />
-
-    {{form.author.label(
-    class="form-label"
-    )}}
-
-    {{form.author(
-    class="form-control",
-    )}}
-
-
-    <br />
     {{form.hidden_tag()}}
 
     {{form.slug.label(
@@ -71,5 +60,7 @@
     )}}
 
 </form>
+{{ckeditor.load(pkg_type="full")}}
+{{ckeditor.config(name = 'content')}}
 </div>
 {% endblock content %}

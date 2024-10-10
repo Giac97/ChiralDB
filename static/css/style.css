@@ -52,3 +52,88 @@ body {
     height: 100% !important; /* Ensure it takes full height */
     position: absolute; /* Set to absolute positioning for resizing */
 }
+
+.a1, .a2{
+    animation:blinking 1.5s infinite;
+    font-size: 100px;
+    text-align: center;
+    font-family: Helvetica;
+    font-weight: bolder;
+    
+    }
+    @keyframes blinking{
+    0%{   color: red}
+    15%{   color: red;   font-size: 120px;}
+    47%{   color: #0015ff; }
+    62%{   color: transparent; }
+    97%{   color:transparent; }
+    100%{  color: #ff0000;   }
+    }
+
+
+.typewriter {
+        overflow: hidden; /* Ensures the text is hidden until animated */
+        border-right: 5px solid black; /* Cursor effect */
+        width: fit-content; /* Adjusts width based on content */
+        animation: typing 10s steps(80, end), blink-caret 0.75s step-end infinite; /* Typing effect and cursor blink */
+    }
+    
+    @keyframes typing {
+        from {
+            width: 0; /* Start with no width */
+        }
+        to {
+            width: 100%; /* End with full width */
+        }
+    }
+    
+    @keyframes blink-caret {
+        50% {
+            border-color: transparent; /* Makes the border invisible to create blinking effect */
+        }
+    }
+
+.type {
+  font-family: monospace;
+  color:#0000;
+  background:
+    linear-gradient(-90deg,#00DFFC 5px,#0000 0) 10px 0,
+    linear-gradient(#00DFFC 0 0) 0 0;
+  background-size:calc(var(--n)*1ch) 200%;
+  -webkit-background-clip:padding-box,text;
+  background-clip:padding-box,text;
+  background-repeat:no-repeat;
+  animation: 
+    b .2s infinite steps(1),   
+    t calc(var(--n)*.05s) steps(var(--n)) forwards;
+}
+@keyframes t{
+  from {background-size:0 200%}
+}
+@keyframes b{
+  50% {background-position:0 -100%,0 0}
+}
+:root {
+    --lh: 1.4rem;
+  }
+.truncate-overflow {
+    --max-lines: 3;
+    position: relative;
+    max-height: calc(var(--lh) * var(--max-lines));
+    overflow: hidden;
+    padding-right: 1rem;
+  }
+  .truncate-overflow::before {
+    position: absolute;
+    content: "...";
+    bottom: 0;
+    right: 0;
+  }
+  .truncate-overflow::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    width: 1rem;
+    height: 1rem;
+    background: white;
+  }

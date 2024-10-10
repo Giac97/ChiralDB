@@ -13,8 +13,11 @@
     <div class="card-body">
         <h5 class="card-title">{{ molecule.name }}</h5>
         <h6 class="card-subtitle mb-2 text-muted"><strong>Composition:</strong> {{ molecule.composition }}</h6>
-        <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{ molecule.author }}</h6>
-        <h6 class="card-subtitle mb-2 text-muted"><strong>Relevant publications:</strong> {{ molecule.publication }}</h6>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{
+            molecule.poster.first_name }}</h6>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Group:</strong> {{ molecule.poster.affiliation }} </h6>
+        <h6 class="card-subtitle mb-2 text-muted"><strong>Relevant publications:</strong> {{ molecule.publication }}
+        </h6>
     </div>
 </div>
 <br />
@@ -24,7 +27,7 @@
             <div class="p-3 border bg-light">
                 <h2>Absorption Spectrum</h2>
                 {% if absorption_plot_div %}
-                <div class="plot-container">  <!-- Use a fixed height -->
+                <div class="plot-container"> <!-- Use a fixed height -->
                     {{ absorption_plot_div|safe }}
                 </div>
                 {% else %}
@@ -32,12 +35,12 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="col">
             <div class="p-3 border bg-light">
                 <h2>ECD Spectrum</h2>
                 {% if ecd_plot_div %}
-                <div class="plot-container">  <!-- Use a fixed height -->
+                <div class="plot-container"> <!-- Use a fixed height -->
                     {{ ecd_plot_div|safe }}
                 </div>
                 {% else %}
@@ -50,23 +53,25 @@
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-    window.onload = function() {
+    window.onload = function () {
         var plotDivs = document.querySelectorAll('.plotly-plot');
-        plotDivs.forEach(function(div) {
+        plotDivs.forEach(function (div) {
             Plotly.Plots.resize(div);
         });
     };
 
-    window.onresize = function() {
+    window.onresize = function () {
         var plotDivs = document.querySelectorAll('.plotly-plot');
-        plotDivs.forEach(function(div) {
+        plotDivs.forEach(function (div) {
             Plotly.Plots.resize(div);
         });
     };
 </script>
 
 
-
-<a class="btn btn-primary mt-3" href="{{ url_for('all_molecules') }}">Back to molecules list</a>
+<div class="btn-group" role="group">
+    <a class="btn btn-primary mt-3" href="{{ url_for('all_molecules') }}">Back to molecules list</a>
+    <a class="btn btn-danger mt-3" href="{{url_for('delete_mol', id = molecule.id)}}">Delete molecule</a>
+</div>
 
 {% endblock %}

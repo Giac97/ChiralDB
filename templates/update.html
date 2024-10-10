@@ -8,11 +8,10 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endfor %}
-{%if name%}
-<h1>Update {{name|title}}!</h1>
-{%else%}
+{% if id == current_user.id %}
 <h1>Update User...</h1>
-<br />
+<br /><br/>
+
 
 <div class = "shadow p-3 mb-5 bg-body rounded">
 
@@ -45,6 +44,17 @@
 
 
     <br />
+    {{form.username.label(
+        class="form-label"
+        )}}
+    
+        {{form.username(
+        class="form-control",
+        value=name_to_update.username
+        )}}
+    
+    
+        <br />
     {{form.hidden_tag()}}
 
     {{form.email.label(
@@ -60,13 +70,13 @@
     <br />
     {{form.hidden_tag()}}
 
-    {{form.favourite_color.label(
+    {{form.affiliation.label(
     class="form-label"
     )}}
 
-    {{form.favourite_color(
+    {{form.affiliation(
     class="form-control",
-    value=name_to_update.favourite_color
+    value=name_to_update.affiliation
     )}}
 
 
@@ -84,7 +94,11 @@
 </div>
 
 <br />
+{% else %}
+    <h1 class="a1" style="text-align: centered;">EH</h1>
+    <h1 class="a1" style="text-align: centered;">VOLEVI</h1>
+
+{% endif %}
 
 
-{%endif%}
 {% endblock content %}

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+<h2>Dashboard</h2>
+<br /><br/>
+<h4>You are logged in</h4>
+
+
+
+<div class = "card" style="width: 24rem;">
+    <div class="card-header">
+       <h5 class="card-title" style = "text-align:center;">User Data</h5> 
+      </div>
+    <img class="card-img-top" src="{{ url_for('static', filename='images/0000.png') }}" alt="Card image cap">
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">Name: {{current_user.first_name}} {{current_user.last_name}}</li>
+        <li class="list-group-item">Username: {{current_user.username}}</li>
+        <li class="list-group-item">Email: {{current_user.email}}</li>
+        <li class="list-group-item">Affiliation: {{current_user.affiliation}}</li>
+        <li class="list-group-item">Date Joined: {{current_user.date_added}}</li>
+    </ul>
+        <div class="btn-group" role="group">
+            <a href="{{url_for('logout')}}" class="btn btn-warning">Logout</a>
+            <a href="{{url_for('update_usr', id = current_user.id)}}" class ="btn btn-primary">Update</a>
+        </div>
+
+
+      
+</div>
+
+<br />
+<h2>Your molecules:</h2>
+<div class="container my-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">  <!-- Added row with responsive columns -->
+        {% for molecule in molecules %}
+        <div class="col">
+            <div class="card h-100">  <!-- Added h-100 to make cards equal height -->
+                <div class="card-body">
+                    <h5 class="card-title">{{ molecule.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted"><strong>Composition:</strong> {{ molecule.composition }}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{ molecule.poster.first_name }}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted"><strong>Group:</strong> {{ molecule.poster.group.name }} </h6>
+
+                    <a class="btn btn-primary" href="{{ url_for('molecule', id=molecule.id) }}">View molecule</a>
+                    <a class="btn btn-danger" href="{{ url_for('delete_mol', id=molecule.id) }}">Delete molecule</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock content %}

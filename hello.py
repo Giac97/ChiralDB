@@ -1,21 +1,26 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, FileField
-from wtforms.validators import data_required, equal_to, length
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, date
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from wtforms.widgets import TextArea
 from sqlalchemy.dialects.postgresql import ARRAY
 import pandas as pd
 from werkzeug.utils import secure_filename
 import os
 import numpy as np
 import plotly.graph_objs as go
+from flask_ckeditor import CKEditor, CKEditorField
+from webforms import *
 
 #Flask instance created below
 app = Flask(__name__)
+
+#add ckeditor
+ckeditor = CKEditor(app)
+
 
 #add database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -30,88 +35,66 @@ db = SQLAlchemy(app)
 
 migrate =Migrate(app, db)
 
-#blogpost model
-class Posts(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    author = db.Column(db.String(255))
-    date_posted = db.Column(db.DateTime, default = datetime.utcnow)
-    slug = db.Column(db.String(255))
+#login crap
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-#post form
-class PostForm(FlaskForm):
-    title = StringField("Title", validators=[data_required()])
-    content = StringField("Content", validators=[data_required()], widget=TextArea())
-    author = StringField("Author", validators=[data_required()])
-    slug = StringField("Slug",validators=[data_required()])
-    submit = SubmitField("Submit")
-    
-#create user model
-class Users(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False, unique = True)
-    date_added = db.Column(db.DateTime, default = datetime.utcnow)
-    favourite_color = db.Column(db.String(120))
-    
-    #password stuff
-    password_hash = db.Column(db.String(200))
-    
-    @property
-    def password(self):
-        raise AttributeError('Password not a readable atribute!')
-    @password.setter
-    def password(self, password):
-        self.password_hash = generate_password_hash(password)
-        
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
-    def __repr__(self) -> str:
-        return '<Name %r>' % self.first_name
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get_or_404(user_id)
 
-class Molecule(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    composition = db.Column(db.String(100), nullable=False)   
-    publication = db.Column(db.Text, nullable=False)
-    author = db.Column(db.String(100))
 
-    
-    wavelength = db.Column(ARRAY(db.Float)) 
-    absortion = db.Column(ARRAY(db.Float)) 
-    ecd = db.Column(ARRAY(db.Float)) 
-    
-    
+
+
+
+
+#login page
+@app.route("/login/", methods = ['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(username = form.username.data).first()
+        if user:
+            #check hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash("Yaldi Yeee!")
+
+                return redirect(url_for("dashboard"))
+            else:
+                flash("Wrong password! Try again")
+        else:
+            flash("Wrong Username! Try again")
+
+    return render_template("login.html", form = form)
+
+
+#logout
+@app.route("/logout/", methods = ['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    flash("You logged out mate, see you later Vader")
+    return redirect(url_for("index"))
+
+#dashboard page
+@app.route("/dashboard/", methods = ['GET', 'POST'])
+@login_required
+def dashboard():
+    my_mols = Molecule.query.filter(Molecule.poster_id == current_user.id)
+    my_mols = my_mols.order_by(Molecule.id).all()
+    return render_template("dashboard.html", molecules = my_mols)
+
 
     
     
 
+    
+    
 
-#Create form class
-class UserForm(FlaskForm):
-    first_name = StringField("First Name", validators=[data_required()])
-    last_name = StringField("Last Name", validators=[data_required()])
-    email = StringField("Email", validators=[data_required()])
-    favourite_color = StringField("Favourite Color")
-    password_hash = PasswordField('Password', validators=[data_required(), equal_to('password_hash2', message="Password must match")]) 
-    password_hash2 = PasswordField('Confirm Password', validators=[data_required(), equal_to('password_hash2', message="Password must match")])
-    submit = SubmitField("Submit")
 
-class PasswordForm(FlaskForm):
-    email = StringField("What's yer email?", validators=[data_required()])
-    password_hash = PasswordField("What's yer password?", validators=[data_required()])
-    submit = SubmitField("Submit")
 
-class MoleculeForm(FlaskForm):
-    name = StringField("Molecule name", validators=[data_required()])
-    composition = StringField("Molecule chemical composition", validators=[data_required()])
-    raw_data = FileField("CSV File with raw data")
-    publication = StringField("Publications", validators=[data_required()], widget=TextArea())
-    author = StringField("Author", validators=[data_required()])
- 
-    submit = SubmitField("Submit")
 
 
 #route decorator
@@ -167,19 +150,21 @@ def add_user():
         if user is None:
             hashed_pw = generate_password_hash(form.password_hash.data)
             user = Users(
+                username = form.username.data,
                 first_name = form.first_name.data,
                 last_name = form.last_name.data,
                 email = form.email.data,
-                favourite_color = form.favourite_color.data,
+                affiliation = form.affiliation.data,
                 password_hash = hashed_pw
             )
             db.session.add(user)
             db.session.commit()
         name = form.first_name.data
+        form.username.data = ''
         form.first_name.data = ''
         form.last_name.data = ''
         form.email.data = ''
-        form.favourite_color.data = ''
+        form.affiliation.data = ''
         form.password_hash.data = ''
 
         flash('User added successfully')
@@ -190,14 +175,17 @@ def add_user():
                         our_users = our_users)
 
 @app.route('/update/<int:id>', methods = ['GET', 'POST'])
+@login_required
 def update_usr(id):
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
     if request.method == "POST":
+        name_to_update.username = request.form['username']
+
         name_to_update.first_name = request.form['first_name']
         name_to_update.last_name = request.form['last_name']
         name_to_update.email = request.form['email']
-        name_to_update.favourite_color = request.form['favourite_color']
+        name_to_update.affiliation = request.form['affiliation']
 
         try:
             db.session.commit()
@@ -213,7 +201,8 @@ def update_usr(id):
     else:
         return render_template("update.html",
                                     form = form,
-                                    name_to_update = name_to_update)
+                                    name_to_update = name_to_update,
+                                    id = id)
 
 @app.route("/delete/<int:id>")
 def delete(id):
@@ -226,7 +215,7 @@ def delete(id):
         flash("User deleted successfully")
         our_users = Users.query.order_by(Users.date_added)
 
-        return redirect("/user/add")
+        return render_template("index.html")
 
     except:
         flash("Whopso, issue deleting user :(")
@@ -238,20 +227,21 @@ def delete(id):
 
 #new post 
 @app.route("/add-post/", methods = ['GET', 'POST'])
+@login_required
 def add_post():
     form = PostForm()
     
     if form.validate_on_submit():
+        poster = current_user.id
         post = Posts(
             title = form.title.data,
             content = form.content.data,
-            author = form.author.data,
+            poster_id = poster,
             slug = form.slug.data
         )
         form.title.data = ''
         form.content.data = ''
         form.slug.data = ''
-        form.author.data = ''
         
         #add to db
         db.session.add(post)
@@ -278,13 +268,13 @@ def post(id):
 
 
 @app.route("/posts/edit/<int:id>", methods = ['GET', 'POST'])
+@login_required
 def edit_post(id):
     post = Posts.query.get_or_404(id)
     form = PostForm()
     #you viewing or submitting a change?
     if form.validate_on_submit(): #we clicked and want to validate
         post.title = form.title.data
-        post.author = form.author.data
         post.content = form.content.data
         post.slug = form.slug.data
         #update db
@@ -294,64 +284,89 @@ def edit_post(id):
         return redirect(url_for('post', id = post.id))
     #if landing there
     form.title.data = post.title
-    form.author.data = post.author
+    #form.author.data = post.author
     form.slug.data = post.slug
     form.content.data = post.content
     return render_template("edit_post.html", form = form)
 
 #delete posts
 @app.route("/posts/delete/<int:id>")
+@login_required
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
+    id = current_user.id
     
-    try:
-        db.session.delete(post_to_delete)
-        db.session.commit()
-        flash("Blog post was deleted")
-        posts = Posts.query.order_by(Posts.date_posted)
-        return render_template("posts.html", posts = posts)
+    if id == post_to_delete.poster.id:
         
-    except:
-        flash("Whopso, problem deleting post")
-        posts = Posts.query.order_by(Posts.date_posted)
-        return render_template("posts.html", posts = posts)
+    
+        try:
+            db.session.delete(post_to_delete)
+            db.session.commit()
+            flash("Blog post was deleted")
+            posts = Posts.query.order_by(Posts.date_posted)
+            return render_template("posts.html", posts = posts)
+            
+        except:
+            flash("Whopso, problem deleting post")
+            posts = Posts.query.order_by(Posts.date_posted)
+            return render_template("posts.html", posts = posts)
+    else:
+        return render_template("not_allowed.html", what = "post")
 
 
 
 ###########################################
 #######Below Molecule Stuff################
 ###########################################
-
+from elli.kkr.kkr import im2re_reciprocal
 @app.route("/molecule/add_molecule", methods = ['GET', 'POST'])
+@login_required
 def add_molecule():
     form = MoleculeForm()
     if form.validate_on_submit():
+        poster = current_user.id
         file = form.raw_data.data
         
         data = open(file, "r")
-        for i in range(22):
-            data.readline()
-
-        wvl = np.zeros(356)
-        ecd = np.zeros(356)
-        abs = np.zeros(356)
+        for _ in range(17):
+                next(data)
+            
+            # Read the number of points
+        n_points = int(next(data).split(',')[1])
+        print(n_points)
+            
+            # Skip the next 4 lines
+        for _ in range(4):
+            next(data)
+        wvl = np.zeros(n_points)
+        ecd = np.zeros(n_points)
+        abs = np.zeros(n_points)
         molecule = Molecule(
             name = form.name.data,
             composition = form.composition.data,
+            poster_id = poster,
             wavelength = [],
             absortion = [],
+            absortion_re = [],
+            ecd_re = [],
             ecd = [],
-            author = form.author.data,
             publication = form.publication.data
         )
-        for i in range(356):
-            wv, cd, u1, ab, u2 = data.readline().split(',')
-
+        for i in range(n_points):
+            line = next(data).strip()
+            wv, cd, _, ab, _ = line.split(',')
+            abs[i] = wv
+            ecd[i] = cd
+            wvl[i] = ab
             molecule.wavelength.append(float(wv))
             molecule.absortion.append(float(ab))
             molecule.ecd.append(float(cd))
-        
-        
+        re_abs = im2re_reciprocal(abs[1:], wvl[1:])
+        re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
+
+        for i in range(2,n_points-2):
+            molecule.absortion_re.append(float(re_abs[i]))
+            molecule.ecd_re.append(float(re_ecd[i]))
         form.name.data = ''
         form.composition.data = ''
         form.raw_data.data = ''
@@ -362,7 +377,7 @@ def add_molecule():
         db.session.commit()
         
         flash("Molecule submitted successfully!")
-        
+        data.close()
     return render_template("add_molecule.html", form = form)
 
 
@@ -380,6 +395,8 @@ def molecule(id):
     wvl = molecule.wavelength
     abs_data = molecule.absortion
     ecd_data = molecule.ecd
+    abs_re_data = molecule.absortion_re
+    ecd_re_data = molecule.ecd_re
 
     # Create Plotly graph data for Absorption
     absorption_trace = go.Scatter(
@@ -388,6 +405,14 @@ def molecule(id):
         mode='lines',
         name='Absorption',
         line=dict(color='blue')
+    )
+    
+    absorption_trace_re = go.Scatter(
+        x=wvl,
+        y=abs_re_data,
+        mode='lines',
+        name='Absorption',
+        line=dict(color='red')
     )
 
     absorption_layout = go.Layout(
@@ -406,6 +431,13 @@ def molecule(id):
         name='ECD',
         line=dict(color='orange')
     )
+    ecd_trace_re = go.Scatter(
+        x=wvl,
+        y=ecd_re_data,
+        mode='lines',
+        name='ECD',
+        line=dict(color='green')
+    )
 
     ecd_layout = go.Layout(
         xaxis=dict(title='Wavelength [nm]'),
@@ -422,3 +454,153 @@ def molecule(id):
 
 
     return render_template("molecule.html", molecule=molecule, absorption_plot_div=absorption_plot_div, ecd_plot_div=ecd_plot_div)
+
+
+
+@app.route("/molecule/delete/<int:id>")
+def delete_mol(id):
+    mol_to_del = Molecule.query.get_or_404(id)
+    id = current_user.id
+    
+    if id == mol_to_del.poster.id:
+    
+        try:
+            db.session.delete(mol_to_del)
+            db.session.commit()
+            flash("Molecule deleted successfully")
+            molecules = Molecule.query.order_by(Molecule.id)
+
+            return render_template("molecules.html", molecules = molecules)
+        except:
+            flash("Whopso, issue deleting molecule :(")
+            molecules = Molecule.query.order_by(Molecule.id)
+            return render_template("molecules.html", molecules = molecules)
+    else:
+        return render_template("not_allowed.html", what = "molecule")
+
+
+#pass stuff to navbar
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form = form)
+
+
+# search
+@app.route("/search/", methods = ["POST"])
+def search():
+    form = SearchForm()
+    posts = Posts.query
+    molecules = Molecule.query
+    if form.validate_on_submit():
+        post.searched = form.searched.data
+        molecule.searched = form.searched.data
+        #query db
+        posts = posts.filter(Posts.content.ilike('%' + post.searched +'%'))
+        posts = posts.order_by(Posts.title).all()
+        
+        molecules = molecules.filter(Molecule.name.ilike('%' + molecule.searched +'%'))
+        molecules = molecules.order_by(Molecule.name).all()
+        return render_template("search.html", 
+                               form = form,
+                               searched = post.searched,
+                               posts = posts,
+                               molecules = molecules)
+
+
+@app.route("/group/create/")
+@login_required
+def create_group():
+    form = GroupForm()
+    if form.validate_on_submit():
+        creator = current_user.id
+        group = ResearchGroup(
+            name = form.name.data,
+            affiliation = form.affiliation.data,
+            country = form.country.data,
+            members = creator
+
+        )
+        form.name.data = ''
+        form.affiliation.data = ''
+        form.country.data = ''
+        
+        #add to db
+        db.session.add(group)
+        db.session.commit()
+    
+    flash("Group created successfully!")
+    
+    return render_template("create_group.html", form = form)
+
+###############################################
+#                 C L A S S E S               #
+###############################################
+
+#blogpost model
+class Posts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    #author = db.Column(db.String(255))
+    date_posted = db.Column(db.DateTime, default = datetime.utcnow)
+    slug = db.Column(db.String(255))
+    #foreign key to link user, refer to user primary key
+    poster_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    
+
+    
+#create user model
+class Users(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable = False, unique = True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), nullable=False, unique = True)
+    date_added = db.Column(db.DateTime, default = datetime.utcnow)
+    affiliation = db.Column(db.String(120))
+    resgroup = db.Column(db.Integer, db.ForeignKey("researchgroup.id"))
+    #password stuff
+    password_hash = db.Column(db.String(200))
+    #can have many posts
+    posts = db.relationship('Posts', backref = "poster")
+    molecules = db.relationship('Molecule', backref = "poster")
+
+    @property
+    def password(self):
+        raise AttributeError('Password not a readable atribute!')
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    def __repr__(self) -> str:
+        return '<Name %r>' % self.first_name
+
+class Molecule(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    composition = db.Column(db.String(100), nullable=False)   
+    publication = db.Column(db.Text, nullable=False)
+    #author = db.Column(db.String(100))
+    poster_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    
+    wavelength = db.Column(ARRAY(db.Float)) 
+    absortion = db.Column(ARRAY(db.Float)) 
+    ecd = db.Column(ARRAY(db.Float)) 
+    absortion_re = db.Column(ARRAY(db.Float)) 
+    ecd_re = db.Column(ARRAY(db.Float)) 
+    
+class ResearchGroup(db.Model):
+    __tablename__ = 'researchgroup'
+    id  = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    affiliation = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    members = db.relationship('Users', backref = "group")
+    def __repr__(self) -> str:
+        return '<Name %r>' % self.name
+    
+
+    

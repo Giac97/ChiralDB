@@ -8,23 +8,36 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endfor %}
+<span class="type" style="--n:53">
+    Blog Posts
+</span>
 
-<h1 class="line-1 anim-typewriter">Blog Posts...</h1>
-{% for post in posts %}
-<div class="card">
-    <div class="card-body">
-    <h5 class="card-title">{{post.title}}</h5>
-    <h6 class="card-subtitle mb-2 text-muted"><strong>By:</strong> {{post.author}}</h6>
-    
-    <p class="card-text">{{post.content}}</p>
-    <p class="card-link">{{post.date_posted}}</p>
-    <a class="btn btn-primary" href = "{{url_for('post', id = post.id)}}">View post</a>
-    <a class="btn btn-primary" href = "{{url_for('edit_post', id = post.id)}}">Edit post</a>
-    <a class="btn btn-danger" href = "{{url_for('delete_post', id = post.id)}}">Delete post</a>
+<br/>
 
+<div class="container my-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4"> <!-- Added row with responsive columns -->
+        {% for post in posts %}
+        <div class="col">
+            <div class="card h-100"> <!-- Added h-100 to make cards equal height -->
+                <div class="card-body">
+                    <h5 class="card-title">{{post.title}}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted"><strong>By:</strong>{{post.poster.first_name}}
+                        {{post.poster.last_name}}</h6>
+                    <div  class=" text-muted text-truncate">
+                        <p>{{post.content | safe}}</p>
+                    </div>
+                    
+                    <p class="card-link">{{post.date_posted}}</p>
+                    <a class="btn btn-primary" href="{{url_for('post', id = post.id)}}">View post</a>
+                    <a class="btn btn-primary" href="{{url_for('edit_post', id = post.id)}}">Edit post</a>
+                    <a class="btn btn-danger" href="{{url_for('delete_post', id = post.id)}}">Delete post</a>
+            
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
-{% endfor %}
 
 {% endblock%}
