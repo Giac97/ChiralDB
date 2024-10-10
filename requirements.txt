@@ -15,6 +15,7 @@ Flask-WTF==1.2.1
 flexcache==0.3
 flexparser==0.3.1
 greenlet==3.1.1
+gunicorn==23.0.0
 h5py==3.12.1
 importlib_resources==6.4.5
 itsdangerous==2.2.0
