@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError, FileField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
 from wtforms.validators import data_required, equal_to, length, DataRequired
 from wtforms.widgets import TextArea
 from flask_ckeditor import CKEditorField
-
+from flask_wtf.file import FileField
 #login form
 class LoginForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
@@ -25,6 +25,7 @@ class UserForm(FlaskForm):
     first_name = StringField("First Name", validators=[DataRequired()])
     last_name = StringField("Last Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
+    profile_pic = FileField("Profile Picture")
     affiliation = StringField("Affiliation")
     password_hash = PasswordField('Password', validators=[DataRequired(), equal_to('password_hash2', message="Password must match")]) 
     password_hash2 = PasswordField('Confirm Password', validators=[DataRequired(), equal_to('password_hash2', message="Password must match")])
@@ -38,7 +39,7 @@ class PasswordForm(FlaskForm):
 class MoleculeForm(FlaskForm):
     name = StringField("Molecule name", validators=[DataRequired()])
     composition = StringField("Molecule chemical composition", validators=[DataRequired()])
-    raw_data = FileField("CSV File with raw data")
+    raw_data = FileField("Profile Picture")
     publication = StringField("Publications", validators=[DataRequired()], widget=TextArea())
     author = StringField("Author")
  
@@ -51,9 +52,9 @@ class SearchForm(FlaskForm):
     submit = SubmitField("Submit")
     
 class GroupForm(FlaskForm):
-    name = StringField("Molecule name", validators=[DataRequired()])
-    affiliation = StringField("Molecule chemical composition", validators=[DataRequired()])
-    country = StringField("CSV File with raw data", validators=[DataRequired()])
+    name = StringField("Group name", validators=[DataRequired()])
+    affiliation = StringField("Affiliation", validators=[DataRequired()])
+    country = StringField("Country", validators=[DataRequired()])
 
  
     submit = SubmitField("Submit")

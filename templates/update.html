@@ -10,93 +10,104 @@
 {% endfor %}
 {% if id == current_user.id %}
 <h1>Update User...</h1>
-<br /><br/>
+<br /><br />
 
 
-<div class = "shadow p-3 mb-5 bg-body rounded">
+<div class="shadow p-3 mb-5 bg-body rounded">
 
-<form action="/update/{{name_to_update.id}}" method="POST">
-
-
-    {{form.hidden_tag()}}
-
-    {{form.first_name.label(
-    class="form-label"
-    )}}
-
-    {{form.first_name(
-    class="form-control",
-    value=name_to_update.first_name
-    )}}
+    <form action="/update/{{name_to_update.id}}" method="POST" enctype="multipart/form-data">
 
 
-    <br />
-    {{form.hidden_tag()}}
+        {{form.hidden_tag()}}
 
-    {{form.last_name.label(
-    class="form-label"
-    )}}
-
-    {{form.last_name(
-    class="form-control",
-    value=name_to_update.last_name
-    )}}
-
-
-    <br />
-    {{form.username.label(
+        {{form.first_name.label(
         class="form-label"
         )}}
-    
+
+        {{form.first_name(
+        class="form-control",
+        value=name_to_update.first_name
+        )}}
+
+
+        <br />
+        {{form.hidden_tag()}}
+
+        {{form.last_name.label(
+        class="form-label"
+        )}}
+
+        {{form.last_name(
+        class="form-control",
+        value=name_to_update.last_name
+        )}}
+
+
+        <br />
+        {{form.username.label(
+        class="form-label"
+        )}}
+
         {{form.username(
         class="form-control",
         value=name_to_update.username
         )}}
-    
-    
+
+
         <br />
-    {{form.hidden_tag()}}
+        {{form.hidden_tag()}}
 
-    {{form.email.label(
-    class="form-label"
-    )}}
+        {{form.email.label(
+        class="form-label"
+        )}}
 
-    {{form.email(
-    class="form-control",
-    value=name_to_update.email
-    )}}
-
-
-    <br />
-    {{form.hidden_tag()}}
-
-    {{form.affiliation.label(
-    class="form-label"
-    )}}
-
-    {{form.affiliation(
-    class="form-control",
-    value=name_to_update.affiliation
-    )}}
+        {{form.email(
+        class="form-control",
+        value=name_to_update.email
+        )}}
 
 
-    <br />
-    <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+        <br />
 
-    {{form.submit(
-    class="btn btn-primary"
-    )}}
+        {{form.affiliation.label(
+        class="form-label"
+        )}}
 
-    <a href="{{url_for('delete', id = name_to_update.id)}}" class = "btn btn-warning">Delete </a>
-    <a href="{{url_for('add_user')}}" class = "btn btn-secondary">Return </a>
-    </div>
-</form>
+        {{form.affiliation(
+        class="form-control",
+        value=name_to_update.affiliation
+        )}}
+
+
+        <br />
+
+        {{form.profile_pic.label(
+        class="form-label"
+        )}}
+
+        {{form.profile_pic(
+        class="form-control",
+        value=name_to_update.profile_pic
+        )}}
+
+
+        <br />
+        <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+
+            {{form.submit(
+            class="btn btn-primary"
+            )}}
+
+            <a href="{{url_for('delete', id = name_to_update.id)}}" class="btn btn-warning">Delete </a>
+            <a href="{{url_for('add_user')}}" class="btn btn-secondary">Return </a>
+        </div>
+    </form>
 </div>
 
 <br />
 {% else %}
-    <h1 class="a1" style="text-align: centered;">EH</h1>
-    <h1 class="a1" style="text-align: centered;">VOLEVI</h1>
+<h1 class="a1" style="text-align: centered;">EH</h1>
+<h1 class="a1" style="text-align: centered;">VOLEVI</h1>
 
 {% endif %}
 

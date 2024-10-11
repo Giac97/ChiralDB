@@ -16,57 +16,32 @@
 
 <div class = "shadow p-3 mb-5 bg-body rounded">
 
-<form method="POST">
-
-
-    {{form.hidden_tag()}}
-
-    {{form.name.label(
-    class="form-label"
-    )}}
-
-    {{form.name(
-    class="form-control",
-    placeholder="John"
-    )}}
-
-
-    <br />
-
-    {{form.composition.label(
-    class="form-label"
-    )}}
-
-    {{form.composition(
-    class="form-control",
-    placeholder="Doe"
-    )}}
-
-    <br />
-
-    {{form.publication.label(
-    class="form-label"
-    )}}
-
-    {{form.publication(
-    class="form-control",
-    rows = '5'
-    )}}
-
-    <br />
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+    
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control", placeholder="Molecule Name") }}
+    
+        <br />
+    
+        {{ form.composition.label(class="form-label") }}
+        {{ form.composition(class="form-control", placeholder="Chemical Composition") }}
+    
+        <br />
+    
+        {{ form.publication.label(class="form-label") }}
+        {{ form.publication(class="form-control", rows='5') }}
+    
+        <br />
+    
+        {{ form.raw_data.label(class="form-label") }}
+        {{ form.raw_data(class="form-control") }}
+    
+        <br />
         
-    {{form.raw_data.label(
-    class="form-label"
-    )}}
-
-    {{form.raw_data()}}
-
-
-    <br />
-    {{form.submit(
-    class="btn btn-secondary"
-    )}}
-</form>
+        {{ form.submit(class="btn btn-secondary") }}
+    </form>
+    
 </div>
 
 

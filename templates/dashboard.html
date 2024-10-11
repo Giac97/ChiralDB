@@ -19,13 +19,19 @@
     <div class="card-header">
        <h5 class="card-title" style = "text-align:center;">User Data</h5> 
       </div>
-    <img class="card-img-top" src="{{ url_for('static', filename='images/0000.png') }}" alt="Card image cap">
+      {% if  current_user.profile_pic %}
+      <img class="card-img-top" src="{{ url_for('static', filename='upload/' + current_user.profile_pic) }}" alt="Card image cap">
+      {% else %}
+      <img class="card-img-top" src="{{ url_for('static', filename='images/0000.png') }}" alt="Card image cap">
+      {% endif %}
+    
     <ul class="list-group list-group-flush">
         <li class="list-group-item">Name: {{current_user.first_name}} {{current_user.last_name}}</li>
         <li class="list-group-item">Username: {{current_user.username}}</li>
         <li class="list-group-item">Email: {{current_user.email}}</li>
         <li class="list-group-item">Affiliation: {{current_user.affiliation}}</li>
         <li class="list-group-item">Date Joined: {{current_user.date_added}}</li>
+        <li class="list-group-item">Profile Picture: {{current_user.profile_pic}}</li>
     </ul>
         <div class="btn-group" role="group">
             <a href="{{url_for('logout')}}" class="btn btn-warning">Logout</a>

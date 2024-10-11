@@ -14,10 +14,15 @@ import numpy as np
 import plotly.graph_objs as go
 from flask_ckeditor import CKEditor, CKEditorField
 from webforms import *
+from werkzeug.utils import secure_filename
+import uuid as uuid
+
+from chiraldb.user import user
 
 #Flask instance created below
 app = Flask(__name__)
 
+app.register_blueprint(user, url_prefix = "")
 #add ckeditor
 ckeditor = CKEditor(app)
 
@@ -25,15 +30,19 @@ ckeditor = CKEditor(app)
 #add database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Aeronautica97@localhost/our_users'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/our_users'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://ua5s1eudlig20:p9b0a5e5a007ed91e4c06c612f696b41cdc8f59f06a5e86b77725d90253115874@ccba8a0vn4fb2p.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/das07ulsnlqu5u'
-#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/our_users'
+
 
 #postgresql://chiraldb_user:LxOXH6O5iVV3k1ixj2RxIEjh06g3R9KV@dpg-cs3u7bogph6c73c879b0-a/chiraldb
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 #secret key
 app.config['SECRET_KEY'] = "soldiers of poland second to none"
+
+#designate upload folder
+UPLOAD_FOLDER = "static/upload/"
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 #init db
 db = SQLAlchemy(app)
@@ -48,10 +57,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return Users.query.get_or_404(user_id)
-
-
-
-
 
 
 #login page
@@ -90,16 +95,6 @@ def dashboard():
     my_mols = Molecule.query.filter(Molecule.poster_id == current_user.id)
     my_mols = my_mols.order_by(Molecule.id).all()
     return render_template("dashboard.html", molecules = my_mols)
-
-
-    
-    
-
-    
-    
-
-
-
 
 
 #route decorator
@@ -191,9 +186,17 @@ def update_usr(id):
         name_to_update.last_name = request.form['last_name']
         name_to_update.email = request.form['email']
         name_to_update.affiliation = request.form['affiliation']
+        name_to_update.profile_pic = request.files['profile_pic']
+        pic_filename = secure_filename(name_to_update.profile_pic.filename)
+        pic_name = str(uuid.uuid1()) + "_" + pic_filename
+        saver = request.files['profile_pic']
+        
 
+        name_to_update.profile_pic = pic_name
+        
         try:
             db.session.commit()
+            saver.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
             flash("User updated successfully!")
             return render_template("update.html",
                                     form = form,
@@ -324,7 +327,7 @@ def delete_post(id):
 #######Below Molecule Stuff################
 ###########################################
 from elli.kkr.kkr import im2re_reciprocal
-@app.route("/molecule/add_molecule", methods = ['GET', 'POST'])
+@app.route("/molecule/add_molecule", methods=['GET', 'POST'])
 @login_required
 def add_molecule():
     form = MoleculeForm()
@@ -332,59 +335,86 @@ def add_molecule():
         poster = current_user.id
         file = form.raw_data.data
         
-        data = open(file, "r")
-        for _ in range(17):
-                next(data)
+        # Initialize file path
+        raw_data_filename = None
+        
+        # Handle file upload if present
+        if request.files['raw_data']:
+            uploaded_file = request.files['raw_data']
+            filename = secure_filename(uploaded_file.filename)
+            unique_filename = str(uuid.uuid1()) + "_" + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             
-            # Read the number of points
-        n_points = int(next(data).split(',')[1])
-        print(n_points)
-            
-            # Skip the next 4 lines
-        for _ in range(4):
-            next(data)
-        wvl = np.zeros(n_points)
-        ecd = np.zeros(n_points)
-        abs = np.zeros(n_points)
+            # Save the file and store the file path
+            uploaded_file.save(file_path)
+            raw_data_filename = file_path
+
+        # Initialize the molecule object
         molecule = Molecule(
-            name = form.name.data,
-            composition = form.composition.data,
-            poster_id = poster,
-            wavelength = [],
-            absortion = [],
-            absortion_re = [],
-            ecd_re = [],
-            ecd = [],
-            publication = form.publication.data
+            name=form.name.data,
+            composition=form.composition.data,
+            poster_id=poster,
+            raw_data=raw_data_filename,  # Store the file path in DB
+            wavelength=[],
+            absortion=[],
+            absortion_re=[],
+            ecd_re=[],
+            ecd=[],
+            publication=form.publication.data
         )
-        for i in range(n_points):
-            line = next(data).strip()
-            wv, cd, _, ab, _ = line.split(',')
-            abs[i] = wv
-            ecd[i] = cd
-            wvl[i] = ab
-            molecule.wavelength.append(float(wv))
-            molecule.absortion.append(float(ab))
-            molecule.ecd.append(float(cd))
-        re_abs = im2re_reciprocal(abs[1:], wvl[1:])
-        re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
 
-        for i in range(2,n_points-2):
-            molecule.absortion_re.append(float(re_abs[i]))
-            molecule.ecd_re.append(float(re_ecd[i]))
-        form.name.data = ''
-        form.composition.data = ''
-        form.raw_data.data = ''
+        # Open and process the uploaded file
+        if raw_data_filename:
+            with open(raw_data_filename, "r") as data:
+                # Skip header lines
+                for _ in range(17):
+                    next(data)
+                
+                # Read the number of points
+                n_points = int(next(data).split(',')[1])
+                print(n_points)
+                
+                # Skip the next 4 lines
+                for _ in range(4):
+                    next(data)
+                
+                # Initialize arrays
+                wvl = np.zeros(n_points)
+                ecd = np.zeros(n_points)
+                abs = np.zeros(n_points)
 
-        
-        #add to db
-        db.session.add(molecule)
-        db.session.commit()
-        
-        flash("Molecule submitted successfully!")
-        data.close()
-    return render_template("add_molecule.html", form = form)
+                # Parse data and populate the molecule object
+                for i in range(n_points):
+                    line = next(data).strip()
+                    wv, cd, _, ab, _ = line.split(',')
+                    abs[i] = wv
+                    ecd[i] = cd
+                    wvl[i] = ab
+                    molecule.wavelength.append(float(wv))
+                    molecule.absortion.append(float(ab))
+                    molecule.ecd.append(float(cd))
+                
+                # Calculate reciprocal values
+                re_abs = im2re_reciprocal(abs[1:], wvl[1:])
+                re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
+                
+                for i in range(2, n_points - 2):
+                    molecule.absortion_re.append(float(re_abs[i]))
+                    molecule.ecd_re.append(float(re_ecd[i]))
 
+        try:
+            # Add the molecule to the database and commit
+            db.session.add(molecule)
+            db.session.commit()
+            
+            flash("Molecule submitted successfully!")
+            return redirect(url_for('add_molecule'))  # Redirect after successful submission
+        except Exception as e:
+            db.session.rollback()  # Rollback in case of failure
+            flash(f"Error adding molecule to database: {e}")
+            return render_template("add_molecule.html", form=form)
+
+    return render_template("add_molecule.html", form=form)
 
 @app.route("/molecule/all_molecules/")
 def all_molecules():
@@ -513,18 +543,16 @@ def search():
                                molecules = molecules)
 
 
-@app.route("/group/create/")
+@app.route("/group/add/", methods = ['GET', 'POST'])
 @login_required
 def create_group():
     form = GroupForm()
+    
     if form.validate_on_submit():
-        creator = current_user.id
         group = ResearchGroup(
             name = form.name.data,
             affiliation = form.affiliation.data,
-            country = form.country.data,
-            members = creator
-
+            country = form.country.data
         )
         form.name.data = ''
         form.affiliation.data = ''
@@ -533,16 +561,21 @@ def create_group():
         #add to db
         db.session.add(group)
         db.session.commit()
-    
-    flash("Group created successfully!")
-    
+        
+        flash("Post submitted successfully!")
+        
     return render_template("create_group.html", form = form)
 
-###############################################
-#                 C L A S S E S               #
-###############################################
 
-#blogpost model
+@app.route("/group/view/")
+def view_groups():
+    groups = ResearchGroup.query.order_by(ResearchGroup.id).all()
+    
+    return render_template("groups.html", groups = groups)
+
+    
+
+    
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -565,6 +598,7 @@ class Users(db.Model, UserMixin):
     date_added = db.Column(db.DateTime, default = datetime.utcnow)
     affiliation = db.Column(db.String(120))
     resgroup = db.Column(db.Integer, db.ForeignKey("researchgroup.id"))
+    profile_pic = db.Column(db.String(), nullable=True)
     #password stuff
     password_hash = db.Column(db.String(200))
     #can have many posts
@@ -590,7 +624,7 @@ class Molecule(db.Model):
     publication = db.Column(db.Text, nullable=False)
     #author = db.Column(db.String(100))
     poster_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    
+    raw_data = db.Column(db.String(), nullable = True)
     wavelength = db.Column(ARRAY(db.Float)) 
     absortion = db.Column(ARRAY(db.Float)) 
     ecd = db.Column(ARRAY(db.Float)) 
@@ -606,6 +640,3 @@ class ResearchGroup(db.Model):
     members = db.relationship('Users', backref = "group")
     def __repr__(self) -> str:
         return '<Name %r>' % self.name
-    
-
-    
