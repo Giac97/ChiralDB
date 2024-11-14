@@ -33,15 +33,23 @@
         <div class="row row-cols-1 row-cols-md-3 g-4">  <!-- Added row with responsive columns -->
             {% for molecule in molecules %}
             <div class="col">
-                <div class="card h-100" style = "background-color: aqua;">  <!-- Added h-100 to make cards equal height -->
+                <div class="card h-100 shadow-sm" style="border-radius: 20px; overflow: hidden; background: linear-gradient(45deg, #c7dbff 0%, #ff5cc3 100%);">  <!-- Added h-100 to make cards equal height -->
                     <div class="card-body">
                         <h5 class="card-title">{{ molecule.name }}</h5>
+                        {% if molecule.iupac_name %}
+                        <h6 class="card-subtitle mb-2 text-muted"><strong>Iupac Name:</strong> {{ molecule.iupac_name | title }} </h6>
+                        {% else %}
+                        <h6 class="card-subtitle mb-2 text-muted"><strong>Iupac Name:</strong> Not Given </h6>
+                        {% endif %}
+                        
+                        <h6 class="card-subtitle mb-2 text-muted"><strong>Molecular Weight:</strong> {{ molecule.molecular_weight }} g/mol </h6>
+    
                         <h6 class="card-subtitle mb-2 text-muted"><strong>Composition:</strong> {{ molecule.composition }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{ molecule.poster.first_name }}</h6>
                         <h6 class="card-subtitle mb-2 text-muted"><strong>Group:</strong> {{ molecule.poster.affiliation }} </h6>
-    
-                        <a class="btn btn-primary" href="{{ url_for('molecule', id=molecule.id) }}">View molecule</a>
-                        <a class="btn btn-danger" href="{{ url_for('delete_mol', id=molecule.id) }}">Delete molecule</a>
+                        <a class="btn btn-primary" href="{{ url_for('molecule', id=molecule.id) }}"><i class="bi bi-eye"></i>
+                            View molecule</a>
+                        <a class="btn btn-danger" href="{{ url_for('delete_mol', id=molecule.id) }}"><i class="bi bi-trash"></i>Delete molecule</a>
                     </div>
                 </div>
             </div>

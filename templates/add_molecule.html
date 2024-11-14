@@ -4,39 +4,61 @@
 
 {% for msg in get_flashed_messages() %}
 <div class="alert alert-warning alert-dismissible show" role="alert">
-    {{msg}}
+    {{ msg }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endfor %}
-{%if name%}
-<h1>Hello {{name|title}}!</h1>
-{%else%}
+
+{% if name %}
+<h1>Hello {{ name|title }}!</h1>
+{% else %}
 <h1>Add New Molecule</h1>
 <br />
 
-<div class = "shadow p-3 mb-5 bg-body rounded">
+<div class="shadow p-3 mb-5 bg-body rounded">
 
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('add_molecule') }}">
         {{ form.hidden_tag() }}
     
         {{ form.name.label(class="form-label") }}
         {{ form.name(class="form-control", placeholder="Molecule Name") }}
     
         <br />
-    
-        {{ form.composition.label(class="form-label") }}
-        {{ form.composition(class="form-control", placeholder="Chemical Composition") }}
+        {{ form.pubchem_id.label(class="form-label") }}
+        {{ form.pubchem_id(class="form-control", placeholder="12345") }}
+        <br />
+        {{ form.concentration.label(class="form-label") }}
+        {{ form.concentration(class="form-control", placeholder="g/L") }}
+        <br />
+        {{ form.molecular_weight.label(class="form-label") }}
+        {{ form.molecular_weight(class="form-control", placeholder="g/mol") }}
     
         <br />
+        {{ form.composition.label(class="form-label") }}  <!-- Added composition field -->
+        {{ form.composition(class="form-control", placeholder="Molecule Composition") }}  <!-- Added composition field -->
     
+        <br />
         {{ form.publication.label(class="form-label") }}
         {{ form.publication(class="form-control", rows='5') }}
     
         <br />
-    
         {{ form.raw_data.label(class="form-label") }}
         {{ form.raw_data(class="form-control") }}
     
+        <br />
+
+        <!-- Add the measurement type field here -->
+        {{ form.tool.label(class="form-label") }}
+        {{ form.tool(class="form-control") }}
+        <br />
+
+        <!-- Add the abs units type field here -->
+        {{ form.abs_units.label(class="form-label") }}
+        {{ form.abs_units(class="form-control") }}
+        <br />
+        <!-- Add the abs units type field here -->
+        {{ form.ecd_units.label(class="form-label") }}
+        {{ form.ecd_units(class="form-control") }}
         <br />
         
         {{ form.submit(class="btn btn-secondary") }}
@@ -44,7 +66,5 @@
     
 </div>
 
-
-
-{%endif%}
+{% endif %}
 {% endblock content %}

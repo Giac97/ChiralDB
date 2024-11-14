@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{ msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+<h1>Advanced Molecule Search</h1>
+<br />
+
+<div class="shadow p-3 mb-5 bg-body rounded">
+
+<form method="POST">
+
+    {{ form.hidden_tag() }}
+    
+    <div class="mb-3">
+        {{ form.name_search.label(class="form-label") }}
+        {{ form.name_search(class="form-control", placeholder="Molecule Name") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.composition_search.label(class="form-label") }}
+        {{ form.composition_search(class="form-control", placeholder="Molecule Composition") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.method_search.label(class="form-label") }}
+        {{ form.method_search(class="form-select") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.uploader_search.label(class="form-label") }}
+        {{ form.uploader_search(class="form-select") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.and_or.label(class="form-label") }}
+        {{ form.and_or(class="form-select") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.submit(class="btn btn-secondary") }}
+    </div>
+    
+</form>
+</div>
+
+{% if molecules %}
+<br />
+<table class="table table-hover table-bordered table-striped">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Molecule Name</th>
+            <th scope="col">Composition</th>
+            <th scope="col">Measurement Method</th>
+            <th scope="col">Uploaded By</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for molecule in molecules %}
+        <tr>
+            <th scope="row">{{ molecule.id }}</th>
+            <td>{{ molecule.name }}</td>
+            <td>{{ molecule.composition }}</td>
+            <td>{{ molecule.method }}</td>
+            <td>{{ molecule.uploader }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No results found.</p>
+{% endif %}
+
+{% endblock content %}

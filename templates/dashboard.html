@@ -15,7 +15,7 @@
 
 
 
-<div class = "card" style="width: 24rem;">
+<div class = "card" style="width: 48rem;">
     <div class="card-header">
        <h5 class="card-title" style = "text-align:center;">User Data</h5> 
       </div>
@@ -31,11 +31,11 @@
         <li class="list-group-item">Email: {{current_user.email}}</li>
         <li class="list-group-item">Affiliation: {{current_user.affiliation}}</li>
         <li class="list-group-item">Date Joined: {{current_user.date_added}}</li>
-        <li class="list-group-item">Profile Picture: {{current_user.profile_pic}}</li>
     </ul>
         <div class="btn-group" role="group">
-            <a href="{{url_for('logout')}}" class="btn btn-warning">Logout</a>
-            <a href="{{url_for('update_usr', id = current_user.id)}}" class ="btn btn-primary">Update</a>
+            <a href="{{url_for('logout')}}" class="btn btn-warning"><i class ="bi bi-box-arrow-right"></i>Logout</a>
+            <a href="{{url_for('update_usr', id = current_user.id)}}" class ="btn btn-primary"><i class = "bi bi-pencil-square"></i>Update User</a>
+            <a href="{{url_for('add_molecule', id = current_user.id)}}" class ="btn btn-success"><i class="bi bi-database-fill-add"></i> Add Molecule</a>
         </div>
 
 
@@ -48,20 +48,62 @@
     <div class="row row-cols-1 row-cols-md-3 g-4">  <!-- Added row with responsive columns -->
         {% for molecule in molecules %}
         <div class="col">
-            <div class="card h-100">  <!-- Added h-100 to make cards equal height -->
-                <div class="card-body">
-                    <h5 class="card-title">{{ molecule.name }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted"><strong>Composition:</strong> {{ molecule.composition }}</h6>
-                    <h6 class="card-subtitle mb-2 text-muted"><strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{ molecule.poster.first_name }}</h6>
-                    <h6 class="card-subtitle mb-2 text-muted"><strong>Group:</strong> {{ molecule.poster.group.name }} </h6>
-
-                    <a class="btn btn-primary" href="{{ url_for('molecule', id=molecule.id) }}">View molecule</a>
-                    <a class="btn btn-danger" href="{{ url_for('delete_mol', id=molecule.id) }}">Delete molecule</a>
+            <div class="card h-100 shadow-sm" style="border-radius: 20px; overflow: hidden; background: linear-gradient(45deg, #c7dbff 0%, #ff5cc3 100%);">
+                <div class="card-body p-3"> <!-- Added padding for better spacing -->
+                    <h5 class="card-title" style="color: #000;">{{ molecule.name }}</h5> <!-- Uniform color for the title -->
+                    
+                    {% if molecule.iupac_name %}
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-file-earmark-text-fill" style="color: #000;"></i> <strong>IUPAC Name:</strong> {{ molecule.iupac_name | title }}
+                    </h6>
+                    {% else %}
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-file-earmark-x-fill" style="color: #000;"></i> <strong>IUPAC Name:</strong> Not Given
+                    </h6>
+                    {% endif %}
+                    
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-bar-chart-fill" style="color: #000;"></i> <strong>Molecular Weight:</strong> {{ molecule.molecular_weight }} g/mol
+                    </h6>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        {% if molecule.tool == MeasurementType.experimental %}
+                            <span class="d-inline-flex align-items-center" style="color: #000;">  <!-- Set color here -->
+                                <img src="{{ url_for('static', filename='images/test-tube.svg') }}" alt="Test Tube" width="16" height="16" style="margin-right: 4px;">
+                                
+                            </span>
+                            <strong>Method:</strong> Experimental
+                        {% else %}
+                            <i class="bi bi-cpu-fill" style="color: #000;"></i> <strong>Method:</strong> Computational
+                        {% endif %}
+                    </h6>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-box" style="color: #000;"></i> <strong>Composition:</strong> {{ molecule.composition }}
+                    </h6>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-person-fill" style="color: #000;"></i> <strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{ molecule.poster.first_name }}
+                    </h6>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
+                        <i class="bi bi-house-fill" style="color: #000;"></i> <strong>Group:</strong> {{ molecule.poster.affiliation }}
+                    </h6>
+                    
+                    <div class="btn-group" role="group"> <!-- Button group for cohesive action buttons -->
+                        <a class="btn btn-primary" href="{{ url_for('molecule', id=molecule.id) }}">
+                            <i class="bi bi-eye" style="color: #fff;"></i> View molecule <!-- White icon on primary button -->
+                        </a>
+                        <a class="btn btn-danger" href="{{ url_for('delete_mol', id=molecule.id) }}">
+                            <i class="bi bi-trash" style="color: #fff;"></i> Delete molecule <!-- White icon on danger button -->
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
 
 {% endblock content %}

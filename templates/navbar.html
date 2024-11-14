@@ -69,7 +69,16 @@
         <form method="post" action="{{url_for('search')}}" class="d-flex" role="search">
             {{form.hidden_tag()}}
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name = "searched">
-          <button class="btn btn-outline-success" type="submit">Search</button>
+          <div class="btn-group">
+            <button class="btn btn-success" type="submit">Search</button>
+            <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-lg-end">
+              <li><a class="dropdown-item" href="{{url_for('advanced_search')}}">Advanced Search </a></li>
+            </ul>
+          </div>
+          
         </form>
 
       </div>

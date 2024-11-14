@@ -70,7 +70,11 @@ body {
     100%{  color: #ff0000;   }
     }
 
-
+.mol-container {
+  width: 400px;
+  height: 400px;
+  position: relative;
+}
 .typewriter {
         overflow: hidden; /* Ensures the text is hidden until animated */
         border-right: 5px solid black; /* Cursor effect */
@@ -137,3 +141,4 @@ body {
     height: 1rem;
     background: white;
   }
+
