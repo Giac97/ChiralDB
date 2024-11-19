@@ -18,7 +18,8 @@
     <div class="card h-100 shadow-sm" style="border-radius: 20px; overflow: hidden; background: linear-gradient(45deg, #c7dbff 0%, #ff5cc3 100%);">
         <div class="card-body p-3"> <!-- Added padding for better spacing -->
             <h5 class="card-title" style="color: #000;">{{ molecule.name }}</h5> <!-- Uniform color for the title -->
-            
+            <h5 class="card-title" style="color: #000;">{{ molecule.id }}</h5> <!-- Uniform color for the title -->
+
             {% if molecule.iupac_name %}
             <h6 class="card-subtitle mb-2 text-muted" style="color: #000;">
                 <i class="bi bi-file-earmark-text-fill" style="color: #000;"></i> <strong>IUPAC Name:</strong> {{ molecule.iupac_name | title }}

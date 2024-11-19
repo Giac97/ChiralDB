@@ -24,7 +24,7 @@
                 {% else %}
                 <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> Not Given</h6>
                 {% endif %}
-
+                
                 <p class="card-text">
                     <i class="bi bi-bar-chart-fill"></i> <strong>Molecular Weight:</strong>
                     {{ molecule.molecular_weight }} g/mol <br />
@@ -95,7 +95,21 @@
                         {% endif %}
                     </div>
                 </div>
+                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
+                    aria-expanded="false" aria-controls="2d_struc">
+                                         <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16" height="16" style="filter: invert(100%) brightness(100%);">
+                    2D Structure
+                </a>
+                <div class="collapse" id="2d_struc">
+                    <div class="p-3 border bg-light">
 
+                            <img class="card-img-top" src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}" alt="Benzene molecule 2d structure" width="20" >
+
+
+                    </div>
+                </div>
+                
+                
                 <!-- Absorption Spectrum -->
                 <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button"
                     aria-expanded="false" aria-controls="abs_spec">

@@ -24,6 +24,10 @@
         {{ form.name(class="form-control", placeholder="Molecule Name") }}
     
         <br />
+        {{ form.twod_struc.label(class="form-label") }}
+        {{ form.twod_struc(class="form-control") }}
+    
+        <br />
         {{ form.pubchem_id.label(class="form-label") }}
         {{ form.pubchem_id(class="form-control", placeholder="12345") }}
         <br />

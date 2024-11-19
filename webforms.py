@@ -39,6 +39,7 @@ class PasswordForm(FlaskForm):
 class MoleculeForm(FlaskForm):
     name = StringField("Molecule name", validators=[DataRequired()])
     composition = StringField("Molecule chemical composition", validators=[DataRequired()])
+    twod_struc = FileField("2D Structure")
     raw_data = FileField("Spectral Data")
     publication = StringField("Publications, separate with comma", validators=[DataRequired()], widget=TextArea())
     author = StringField("Author")

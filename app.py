@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect, session, url_for, Response, make_response
+from flask import Flask, render_template, flash, request, redirect, session, url_for, Response, make_response, jsonify
 from io import StringIO
 
 from flask_wtf import FlaskForm
@@ -24,7 +24,7 @@ import io
 from sqlalchemy import or_
 from utilities.publication import get_metadata_from_doi, get_bibtex_from_doi
 from utilities.units import *
-
+import json
 from chiraldb.user import user
 
 #Flask instance created below
@@ -84,7 +84,7 @@ def login():
         if user and check_password_hash(user.password_hash, form.password.data):
             # Log in the user and redirect to the dashboard
             login_user(user)
-            flash("Yaldi Yeee!")
+            flash("You logged in successfully")
             return redirect(url_for("dashboard"))
         else:
             # Handle incorrect credentials
@@ -100,7 +100,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("You logged out mate, see you later Vader")
+    flash("You logged out")
     return redirect(url_for("index"))
 
 #dashboard page
@@ -353,6 +353,7 @@ def add_molecule():
         print("Form validated successfully!")  # Debug line
         poster = current_user.id
         file = form.raw_data.data
+        twod_file = form.twod_struc.data
         
         # Handle PubChem ID if provided
         cid = form.pubchem_id.data
@@ -392,11 +393,20 @@ def add_molecule():
             ecd = np.zeros(n_points)
             abs = np.zeros(n_points)
 
+        twod_filename = None
+        if twod_file:
+            filename = secure_filename(twod_file.filename)
+            unique_filename = str(uuid.uuid1()) + "_" + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            twod_file.save(file_path)  # Save the uploaded file
+            twod_filename = file_path
+            
         # Initialize the molecule object
         molecule = Molecule(
             name=form.name.data,
             composition=form.composition.data,
             pubchem_id=cid,  # Store PubChem ID
+            two_d_struc=twod_filename,
             molecular_weight=molecular_weight,
             iupac_name=iupac_name,
             concentration = form.concentration.data,
@@ -607,7 +617,7 @@ def delete_mol(id):
         except:
             flash("Whopso, issue deleting molecule :(")
             molecules = Molecule.query.order_by(Molecule.id)
-            return render_template("molecules.html", molecules = molecules)
+            return render_template("molecules.html", molecules = molecules, MeasurementType=MeasurementType)
     else:
         return render_template("not_allowed.html", what = "molecule")
 
@@ -617,6 +627,7 @@ def delete_mol(id):
 def base():
     form = SearchForm()
     return dict(form = form)
+
 
 
 # search
@@ -645,6 +656,119 @@ def search():
                                searched = post.searched,
                                posts = posts,
                                molecules = molecules)
+
+@app.route("/compare/<int:id1>-<int:id2>")
+def compare_mols(id1, id2):
+    mol_1 = Molecule.query.get_or_404(id1)
+    mol_2 = Molecule.query.get_or_404(id2)
+    wvl = [mol_1.wavelength, mol_2.wavelength]
+    abs_data = [mol_1.absortion, mol_2.absortion]
+    ecd_data = [mol_1.ecd, mol_2.ecd]
+    absorption1_trace = go.Scatter(x=wvl[0], y=abs_data[0], mode='lines', name='Absorption {}'.format(mol_1.name), line=dict(color='blue'))
+    absorption2_trace = go.Scatter(x=wvl[1], y=abs_data[1], mode='lines', name='Absorption {}'.format(mol_2.name), line=dict(color='red'))
+
+    ecd1_trace = go.Scatter(x=wvl[0], y=ecd_data[0], mode='lines', name='ECD {}'.format(mol_1.name), line=dict(color='blue'))
+    ecd2_trace = go.Scatter(x=wvl[1], y=ecd_data[1], mode='lines', name='ECD {}'.format(mol_2.name), line=dict(color='red'))
+    
+    absorption_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Absorption [ext]'), hovermode='closest', autosize=True)
+    absorption_figure = go.Figure(data=[absorption1_trace,absorption2_trace ], layout=absorption_layout)
+
+    ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
+    ecd_figure = go.Figure(data=[ecd1_trace,ecd2_trace ], layout=ecd_layout)
+    
+    absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    
+    ecd_arr1 = np.array(ecd_data[0])
+    ecd_arr2 = np.array(ecd_data[1])
+
+    abs_arr1 = np.array(abs_data[0])
+    abs_arr2 = np.array(abs_data[1])
+
+    g_fac1 = np.zeros(len(ecd_arr1))
+    g_fac2 = np.zeros(len(ecd_arr2))
+
+    min_abs1 = np.max(abs_arr1)/1000.0
+    min_abs2 = np.max(abs_arr2)/1000.0
+
+    for i in range(len(ecd_arr1)):
+        if abs_arr1[i] > min_abs1:
+            g_fac1[i] = ecd_arr1[i] / abs_arr1[i]
+        else:
+            g_fac1[i] = 0   
+             
+    for i in range(len(ecd_arr2)):
+        if abs_arr2[i] > min_abs2:
+            g_fac2[i] = ecd_arr2[i] / abs_arr2[i]
+        else:
+            g_fac2[i] = 0
+              
+    #max g fac for mol 1
+    wvl1 = wvl[0]
+    wvl2 = wvl[1]
+    id_max_g1 = np.argmax(np.abs(g_fac1))
+    max_g1 = g_fac1[id_max_g1]
+    wvl_maxg1 = wvl1[id_max_g1]
+    
+    #max g fac for mol 2
+    id_max_g2 = np.argmax(np.abs(g_fac2))
+    max_g2 = g_fac1[id_max_g2]
+    wvl_maxg2 = wvl2[id_max_g2]
+    
+    g_fac_trace1 = go.Scatter(x=wvl1, y=g_fac1, mode='lines', name='g factor {}'.format(mol_1.name), line=dict(color='orange'))
+    g_fac_trace2 = go.Scatter(x=wvl2, y=g_fac1, mode='lines', name='g factor {}'.format(mol_2.name), line=dict(color='green'))
+
+    g_fac_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='g factor'), hovermode='closest', autosize=True)
+    g_fac_figure = go.Figure(data=[g_fac_trace1, g_fac_trace2], layout=g_fac_layout)
+    gfac_plot_div = g_fac_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+
+    
+    return render_template(
+        "compare.html",
+        molecule1=mol_1,
+        molecule2=mol_2,
+        absorption_plot_div=absorption_plot_div,
+        ecd_plot_div = ecd_plot_div,
+        gfac_plot_div=gfac_plot_div,
+        max_g1=max_g1,
+        wvl_maxg1=wvl_maxg1,
+        max_g2=max_g2,
+        wvl_maxg2=wvl_maxg2,
+        MeasurementType=MeasurementType,
+
+    )
+
+@app.route("/compare/<int:id1>-<int:id2>/data")
+def compare_data_json(id1, id2):
+    mol_1 = Molecule.query.get_or_404(id1)
+    mol_2 = Molecule.query.get_or_404(id2)
+
+    # Prepare JSON data
+    data = {
+        "molecule1": {
+            "name": mol_1.name,
+            "wavelength": mol_1.wavelength,
+            "ecd": mol_1.ecd
+        },
+        "molecule2": {
+            "name": mol_2.name,
+            "wavelength": mol_2.wavelength,
+            "ecd": mol_2.ecd
+        }
+    }
+    return jsonify(data)
+  
+@app.route("/select-molecules", methods=["GET", "POST"])
+def select_molecules():
+    molecules = Molecule.query.all()  # Fetch all molecules from the database
+    if request.method == "POST":
+        id1 = request.form.get("molecule1")
+        id2 = request.form.get("molecule2")
+        if id1 and id2 and id1 != id2:  # Ensure both IDs are selected and different
+            return redirect(url_for("compare_mols", id1=id1, id2=id2))
+        else:
+            flash("Please select two different molecules.", "danger")
+    return render_template("select_molecules.html", molecules=molecules)
 
 
 @app.route("/search/advanced", methods=["GET", "POST"])
@@ -754,6 +878,22 @@ def view_groups():
     
     return render_template("groups.html", groups = groups)
 
+@app.route('/plot_data/<int:molecule_id>', methods=['GET'])
+def get_plot_data(molecule_id):
+    # Query the molecule from the database
+    molecule = Molecule.query.get_or_404(molecule_id)
+
+    # Prepare the data
+    data = {
+        "wavelength": molecule.wavelength,
+        "ecd": molecule.ecd,
+        "absorption": molecule.absortion
+    }
+    return jsonify(data)
+
+@app.route('/plot/<int:molecule_id>', methods=['GET'])
+def plot_page(molecule_id):
+    return render_template('plot.html', molecule_id=molecule_id)
 ############################|
 ###### CLASSESS ORM ########|
 ############################|
@@ -824,6 +964,8 @@ class Molecule(db.Model):
     
     iupac_name = db.Column(db.String(150), nullable = True)
     
+    two_d_struc = db.Column(db.String(), nullable = True)
+    
     # Using postgresql.ENUM to define the enum type explicitly in PostgreSQL
     tool = db.Column(
         ENUM(MeasurementType, name="measurementtype"), 
@@ -836,6 +978,8 @@ class Molecule(db.Model):
     ecd = db.Column(ARRAY(db.Float)) 
     absortion_re = db.Column(ARRAY(db.Float)) 
     ecd_re = db.Column(ARRAY(db.Float))
+    
+    
     
 class ResearchGroup(db.Model):
     __tablename__ = 'researchgroup'
