@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible show" role="alert">
+    {{msg}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+<h1>Update Molecule...</h1>
+<br /><br />
+<div class="shadow p-3 mb-5 bg-body rounded">
+
+    <form action="/molecule/update/{{mol_to_update.id}}" method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+    
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control", value=mol_to_update.name) }}
+    
+        <br />
+        {{ form.concentration.label(class="form-label") }}
+        {{ form.concentration(class="form-control", value=mol_to_update.concentration) }}
+    
+        <br />
+        {{ form.composition.label(class="form-label") }}  <!-- Added composition field -->
+        {{ form.composition(class="form-control", value=mol_to_update.composition) }}  <!-- Added composition field -->
+    
+        <br />
+        {{ form.publication.label(class="form-label") }}
+        {{ form.publication(class="form-control", rows='5', data=mol_to_update.publication) }}
+        <br />
+        <div class="btn-group" role="group" aria-label="Basic mixed styles example">
+
+            {{form.submit(
+            class="btn btn-primary"
+            )}}
+
+            <a href="{{url_for('delete_mol', id = mol_to_update.id)}}" class="btn btn-warning">Delete </a>
+            <a href="{{url_for('dashboard')}}" class="btn btn-secondary">Return </a>
+        </div>
+    </form>
+</div>
+
+
+
+{% endblock content %}

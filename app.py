@@ -1,5 +1,8 @@
 from flask import Flask, render_template, flash, request, redirect, session, url_for, Response, make_response, jsonify
 from io import StringIO
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 from flask_wtf import FlaskForm
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
@@ -40,7 +43,7 @@ ckeditor = CKEditor(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/our_users'
 
 
-#postgresql://chiraldb_user:LxOXH6O5iVV3k1ixj2RxIEjh06g3R9KV@dpg-cs3u7bogph6c73c879b0-a/chiraldb
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chiraldb_user:LxOXH6O5iVV3k1ixj2RxIEjh06g3R9KV@dpg-cs3u7bogph6c73c879b0-a/chiraldb'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 #secret key
@@ -436,12 +439,14 @@ def add_molecule():
             molecule.wavelength.append(float(wv))
             molecule.absortion.append(float(ab))
             molecule.ecd.append(float(cd))
-        re_abs = im2re_reciprocal(abs[1:], wvl[1:])
-        re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
+            abs[i] = ab
+            wvl[i] = wv
+        #re_abs = im2re_reciprocal(abs[1:], wvl[1:])
+        #re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
 
-        for i in range(2,n_points-2):
-            molecule.absortion_re.append(float(re_abs[i]))
-            molecule.ecd_re.append(float(re_ecd[i]))
+        # for i in range(n_points):
+        #     molecule.absortion_re.append(float(re_abs[i]))
+        #     molecule.ecd_re.append(float(re_ecd[i]))
         try:
             print(f"Inserting molecule with: {molecule.__dict__}")  # Debug line
             db.session.add(molecule)
@@ -458,7 +463,7 @@ def add_molecule():
     return render_template("add_molecule.html", form=form)
 
 
-
+from scipy.signal import hilbert
 
 @app.route("/molecule/<int:id>/", methods=['GET', 'POST'])
 def molecule(id):
@@ -471,11 +476,12 @@ def molecule(id):
     wvl = molecule.wavelength
     abs_data = molecule.absortion
     ecd_data = molecule.ecd
-    abs_re_data = molecule.absortion_re
-    ecd_re_data = molecule.ecd_re
+    #abs_re_data = molecule.absortion_re
+    #ecd_re_data = molecule.ecd_re
     
     ecd_abs = np.array(ecd_data)
     abs_arr = np.array(abs_data)
+    #abs_re_arr = np.array(abs_re_data)
     g_fac = np.zeros(len(ecd_abs))
     min_abs = np.max(abs_arr)/1000.0
     for i in range(len(ecd_abs)):
@@ -487,21 +493,28 @@ def molecule(id):
     id_max_g = np.argmax(np.abs(g_fac))
     max_g = g_fac[id_max_g]
     wvl_maxg = wvl[id_max_g]
+    abs_complex = hilbert(abs_arr)
+    abs_real = -abs_complex.imag
     
+    ecd_complex = hilbert(ecd_abs)
+    ecd_real = -ecd_complex.imag
     # Create Plotly graph data for Absorption, ECD, and g-factor (as you already have)
     absorption_trace = go.Scatter(x=wvl, y=abs_data, mode='lines', name='Absorption', line=dict(color='blue'))
-    absorption_trace_re = go.Scatter(x=wvl, y=abs_re_data, mode='lines', name='Absorption', line=dict(color='red'))
+    absorption_trace_re = go.Scatter(x = wvl, y = abs_real, mode = 'lines', name = 'Re(Absorption)', line = dict(color='green'))
+    #absorption_trace_re = go.Scatter(x=wvl, y=abs_re_arr, mode='lines', name='Absorption', line=dict(color='red'))
     absorption_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Absorption [ext]'), hovermode='closest', autosize=True)
 
     ecd_trace = go.Scatter(x=wvl, y=ecd_data, mode='lines', name='ECD', line=dict(color='orange'))
-    ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='green'))
+    ecd_trace_re = go.Scatter(x = wvl, y = ecd_real, mode = 'lines', name = 'Re(ECD)', line = dict(color='green'))
+
+    ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='yellow'))
     ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
 
     g_fac_trace = go.Scatter(x=wvl, y=g_fac, mode='lines', name='g factor', line=dict(color='orange'))
     g_fac_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='g factor'), hovermode='closest', autosize=True)
 
-    ecd_figure = go.Figure(data=[ecd_trace, ecd_trace_mirr], layout=ecd_layout)
-    absorption_figure = go.Figure(data=[absorption_trace], layout=absorption_layout)
+    ecd_figure = go.Figure(data=[ecd_trace, ecd_trace_mirr, ecd_trace_re], layout=ecd_layout)
+    absorption_figure = go.Figure(data=[absorption_trace,absorption_trace_re], layout=absorption_layout)
     g_fac_figure = go.Figure(data=[g_fac_trace], layout=g_fac_layout)
 
     absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
@@ -528,9 +541,11 @@ def molecule(id):
             header.append('ECD')
         if form.gfactor.data:
             header.append('g Factor')
+        if form.abs_re.data:
+            header.append('Absorption (Re)')
 
         writer.writerow(header)
-
+        s = 0
         # Write data rows based on user selection
         for i in range(len(wvl)):
             row = [wvl[i]]
@@ -540,6 +555,7 @@ def molecule(id):
                 row.append(ecd_data[i])
             if form.gfactor.data:
                 row.append(g_fac[i])
+
             writer.writerow(row)
 
         # Create a downloadable CSV response
@@ -621,7 +637,34 @@ def delete_mol(id):
     else:
         return render_template("not_allowed.html", what = "molecule")
 
-
+@app.route('/molecule/update/<int:id>', methods = ['GET', 'POST'])
+@login_required
+def update_mol(id):
+    form = MoleculeForm()
+    mol_to_update = Molecule.query.get_or_404(id)
+    
+    if request.method == "POST":
+        mol_to_update.name = request.form['name']
+        mol_to_update.composition = request.form['composition']
+        mol_to_update.publication = request.form['publication']
+        mol_to_update.concentration = request.form['concentration']
+        
+        try:
+            db.session.commit()
+            flash("Molecule updated successfully")
+            return render_template("update_mol.html",
+                                   form = form,
+                                   mol_to_update = mol_to_update)
+        except:
+            flash("Error! Try again!")
+            return render_template("update_mol.html",
+                                   form = form,
+                                   mol_to_update = mol_to_update)
+    else:
+        return render_template("update_mol.html",
+                               form = form,
+                               mol_to_update = mol_to_update,
+                               id = id)
 #pass stuff to navbar
 @app.context_processor
 def base():
@@ -716,7 +759,7 @@ def compare_mols(id1, id2):
     wvl_maxg2 = wvl2[id_max_g2]
     
     g_fac_trace1 = go.Scatter(x=wvl1, y=g_fac1, mode='lines', name='g factor {}'.format(mol_1.name), line=dict(color='orange'))
-    g_fac_trace2 = go.Scatter(x=wvl2, y=g_fac1, mode='lines', name='g factor {}'.format(mol_2.name), line=dict(color='green'))
+    g_fac_trace2 = go.Scatter(x=wvl2, y=g_fac2, mode='lines', name='g factor {}'.format(mol_2.name), line=dict(color='green'))
 
     g_fac_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='g factor'), hovermode='closest', autosize=True)
     g_fac_figure = go.Figure(data=[g_fac_trace1, g_fac_trace2], layout=g_fac_layout)
@@ -887,7 +930,8 @@ def get_plot_data(molecule_id):
     data = {
         "wavelength": molecule.wavelength,
         "ecd": molecule.ecd,
-        "absorption": molecule.absortion
+        "absorption": molecule.absortion,
+        "abs_re": molecule.absortion_re
     }
     return jsonify(data)
 

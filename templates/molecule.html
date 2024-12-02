@@ -53,6 +53,8 @@
 
                     <i class="bi bi-graph-up-arrow"></i> <strong>Max g-factor:</strong>
                     {{ max_g | round(5) }} ({{ wvl_maxg }} nm)
+                    
+
                 </p>
             </div>
         </div>
@@ -95,18 +97,28 @@
                         {% endif %}
                     </div>
                 </div>
+
+                
                 <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
                     aria-expanded="false" aria-controls="2d_struc">
                                          <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16" height="16" style="filter: invert(100%) brightness(100%);">
                     2D Structure
                 </a>
+
                 <div class="collapse" id="2d_struc">
+                    {% if molecule.two_d_struc%}
                     <div class="p-3 border bg-light">
 
                             <img class="card-img-top" src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}" alt="Benzene molecule 2d structure" width="20" >
 
 
                     </div>
+                    {%else%}
+                    <div class="p-3 border bg-light">
+                        <script src="https://www.biblegateway.com/votd/votd.write.callback.js"></script>
+                        <script src="https://www.biblegateway.com/votd/get/?format=json&version=KJV&callback=BG.votdWriteCallback"></script>
+                    </div>
+                    {%endif%}
                 </div>
                 
                 
@@ -182,6 +194,7 @@
                             <div class="form-check">
                                 {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
                             </div>
+
                             {{ form.submit(class="btn btn-primary mt-3") }}
                         </form>
                         <br/>
@@ -231,6 +244,8 @@
         Back to Molecules List</a>
     <a class="btn btn-outline-danger" href="{{url_for('delete_mol', id=molecule.id)}}"><i class="bi bi-trash"></i>
         Delete Molecule</a>
+    <a class="btn btn-outline-success" href="{{url_for('update_mol', id=molecule.id)}}"><i class="bi bi-pencil"></i>
+            Edit Molecule</a>
 </div>
 
 <!-- Plotly and Viewer JS -->
