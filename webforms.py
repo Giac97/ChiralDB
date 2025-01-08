@@ -105,4 +105,5 @@ class CSVExportForm(FlaskForm):
     ecd = BooleanField('ECD', default=True)
     abs_re = BooleanField("Absorption (Re)")
     gfactor = BooleanField('g Factor')
+    alpha_c = BooleanField('Alpha_c')
     submit = SubmitField('Download CSV')

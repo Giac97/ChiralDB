@@ -3,7 +3,7 @@ from io import StringIO
 import sys
 import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
+from utilities.polarizability import *
 from flask_wtf import FlaskForm
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import timedelta
@@ -30,6 +30,10 @@ from utilities.units import *
 import json
 from chiraldb.user import user
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 #Flask instance created below
 app = Flask(__name__)
 app.register_blueprint(user, url_prefix = "")
@@ -40,19 +44,20 @@ ckeditor = CKEditor(app)
 #add database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Aeronautica97@localhost/our_users'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/our_users'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/chiraldb'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
 
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chiraldb_user:LxOXH6O5iVV3k1ixj2RxIEjh06g3R9KV@dpg-cs3u7bogph6c73c879b0-a/chiraldb'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 #secret key
-app.config['SECRET_KEY'] = "soldiers of poland second to none"
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 #designate upload folder
 UPLOAD_FOLDER = "static/upload/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=50)
+app.config['PERMANENT_SESSION_LIFETIME'] =  timedelta(minutes=240)
 
 
 #init db
@@ -471,7 +476,7 @@ def molecule(id):
     
     # Initialize the CSV export form
     form = CSVExportForm()
-
+    L = 1.0
     # Prepare data for Plotly
     wvl = molecule.wavelength
     abs_data = molecule.absortion
@@ -489,7 +494,20 @@ def molecule(id):
             g_fac[i] = ecd_abs[i] / abs_arr[i]
         else:
             g_fac[i] = 0
+    C = molecule.concentration
+    M = molecule.molecular_weight
 
+    ecd_mdeg = ext_to_mdeg(ecd_abs, M, C, L)
+    
+    polar = polarisability(wvl, ext_to_abs(abs_arr, M=M, C=C, L=L), ecd_mdeg , C * 1000 / M, L, 1.0)
+    
+    im_alphac = np.imag(polar[1])
+    re_alphac = np.real(polar[1])
+
+    im_alphaa = np.imag(polar[0])
+    re_alphaa = np.real(polar[0])
+
+    print(im_alphac)
     id_max_g = np.argmax(np.abs(g_fac))
     max_g = g_fac[id_max_g]
     wvl_maxg = wvl[id_max_g]
@@ -506,6 +524,15 @@ def molecule(id):
 
     ecd_trace = go.Scatter(x=wvl, y=ecd_data, mode='lines', name='ECD', line=dict(color='orange'))
     ecd_trace_re = go.Scatter(x = wvl, y = ecd_real, mode = 'lines', name = 'Re(ECD)', line = dict(color='green'))
+    
+    im_alpha_c_trace = go.Scatter(x = wvl, y = im_alphac, mode = 'lines', name = 'Im(Alpha_c)', line = dict(color='magenta'))
+    re_alpha_c_trace = go.Scatter(x = wvl, y = re_alphac, mode = 'lines', name = 'Re(Alpha_c)', line = dict(color='green'))
+
+    im_alpha_a_trace = go.Scatter(x = wvl, y = im_alphaa, mode = 'lines', name = 'Im(Alpha_a)', line = dict(color='magenta'))
+    re_alpha_a_trace = go.Scatter(x = wvl, y = re_alphaa, mode = 'lines', name = 'Re(Alpha_a)', line = dict(color='green'))
+
+    alpha_c_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Alpha_c'), hovermode='closest', autosize=True)
+    alpha_a_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Alpha_a'), hovermode='closest', autosize=True)
 
     ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='yellow'))
     ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
@@ -516,10 +543,14 @@ def molecule(id):
     ecd_figure = go.Figure(data=[ecd_trace, ecd_trace_mirr, ecd_trace_re], layout=ecd_layout)
     absorption_figure = go.Figure(data=[absorption_trace,absorption_trace_re], layout=absorption_layout)
     g_fac_figure = go.Figure(data=[g_fac_trace], layout=g_fac_layout)
-
+    alpha_c_figure = go.Figure(data=[im_alpha_c_trace, re_alpha_c_trace], layout=alpha_c_layout)
+    alpha_a_figure = go.Figure(data=[im_alpha_a_trace, re_alpha_a_trace], layout=alpha_a_layout)
+ 
     absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     gfac_plot_div = g_fac_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    alpha_c_plot_div = alpha_c_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    alpha_a_plot_div = alpha_a_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
 
     publications = molecule.publication
     publications = publications.split(",")
@@ -543,6 +574,9 @@ def molecule(id):
             header.append('g Factor')
         if form.abs_re.data:
             header.append('Absorption (Re)')
+        if form.alpha_c.data:
+            header.append('Alpha c (Im)')
+
 
         writer.writerow(header)
         s = 0
@@ -555,6 +589,8 @@ def molecule(id):
                 row.append(ecd_data[i])
             if form.gfactor.data:
                 row.append(g_fac[i])
+            if form.alpha_c.data:
+                row.append(im_alphac[i])
 
             writer.writerow(row)
 
@@ -570,6 +606,8 @@ def molecule(id):
     absorption_plot_div=absorption_plot_div,
     ecd_plot_div=ecd_plot_div,
     gfac_plot_div=gfac_plot_div,
+    alpha_c_plot_div=alpha_c_plot_div,
+    alpha_a_plot_div=alpha_a_plot_div,
     max_g=max_g,
     wvl_maxg=wvl_maxg,
     form=form,

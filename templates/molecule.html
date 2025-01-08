@@ -175,6 +175,41 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#alpha_a" role="button"
+                    aria-expanded="false" aria-controls="g_fac">
+                    <i class="bi bi-graph-up"></i> Achiral Polarizability
+                </a>
+                <div class="collapse" id="alpha_a">
+                    <div class="p-3 border bg-light">
+                        <h2>Chiral Polarizability</h2>
+                        {% if alpha_a_plot_div %}
+                        <div class="plot-container">
+                            {{ alpha_a_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No g-factor data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#alpha_c" role="button"
+                    aria-expanded="false" aria-controls="g_fac">
+                    <i class="bi bi-graph-up"></i> Chiral Polarizability
+                </a>
+                <div class="collapse" id="alpha_c">
+                    <div class="p-3 border bg-light">
+                        <h2>Chiral Polarizability</h2>
+                        {% if alpha_c_plot_div %}
+                        <div class="plot-container">
+                            {{ alpha_c_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No g-factor data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
                 {% if current_user.is_authenticated %}
                 <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#download_csv" role="button"
                     aria-expanded="false" aria-controls="download_csv">
@@ -193,6 +228,9 @@
                             </div>
                             <div class="form-check">
                                 {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
+                            </div>
+                            <div class="form-check">
+                                {{ form.alpha_c.label }} {{ form.alpha_c(class="form-check-input") }}
                             </div>
 
                             {{ form.submit(class="btn btn-primary mt-3") }}
