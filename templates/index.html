@@ -37,15 +37,6 @@
     </div>
 </div>
 
-<!-- JavaScript for dynamic parallax effect -->
-<script>
-document.addEventListener("scroll", function () {
-    const parallax = document.getElementById("parallax-bg");
-    const scrollPosition = window.scrollY;
-    parallax.style.transform = `translateY(${scrollPosition * 0.5}px)`;
-});
-</script>
-
 <!-- CSS animations for text -->
 <style>
 @keyframes fadeIn {
@@ -174,9 +165,46 @@ document.addEventListener("scroll", function () {
       </div>
     </div>
   </div>
+
+</div>
     </div>
     </p>
   </div>
+<!-- Hero section with enhanced parallax scrolling -->
+<div class="hero-section" style="position: relative; height: 20vh; overflow: hidden;">
+    <div class="parallax" id="parallax-bg" style="
+         background-image: url('{{ url_for('static', filename='images/heli_light.png') }}'); 
+         background-size: cover; 
+         background-position: center; 
+         height: 100%; 
+         width: 100%; 
+         transform: translateY(0);
+         transition: transform 0.2s ease-out;
+	 z-index:-1;">
+    </div>
+
+    <!-- Gradient overlay for a richer visual effect -->
+    <div class="hero-overlay" style="
+         position: absolute; 
+         top: 0; 
+         left: 0; 
+         width: 100%; 
+         height: 100%; 
+         background: linear-gradient(305deg, rgba(255, 140, 0, 0.7), rgba(0, 0, 0, 0.7)); 
+         display: flex; 
+         justify-content: center; 
+         align-items: center;
+	 z-index: 1;">
+    </div>
 </div>
+<!-- JavaScript for dynamic parallax effect -->
+<script>
+document.addEventListener("scroll", function () {
+    const parallax = document.getElementById("parallax-bg");
+    const scrollPosition = window.scrollY;
+    parallax.style.transform = `translateY(${scrollPosition * 0.5}px)`;
+});
+</script>
+
 {% endblock %}
 

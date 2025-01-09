@@ -236,6 +236,25 @@
     </a>
 </div>
 
+    <!-- Plotly and Viewer JS -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        window.onload = function () {
+            var plotDivs = document.querySelectorAll('.plotly-plot');
+            plotDivs.forEach(function (div) {
+                Plotly.Plots.resize(div);
+            });
+        };
+
+        window.onresize = function () {
+            var plotDivs = document.querySelectorAll('.plotly-plot');
+            plotDivs.forEach(function (div) {
+                Plotly.Plots.resize(div);
+            });
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/molecule_viewer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
 <style>
     .btn-outline-primary:hover {
         background-color: #34495e;
