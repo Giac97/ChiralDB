@@ -24,7 +24,7 @@
                 {% else %}
                 <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> Not Given</h6>
                 {% endif %}
-                
+
                 <p class="card-text">
                     <i class="bi bi-bar-chart-fill"></i> <strong>Molecular Weight:</strong>
                     {{ molecule.molecular_weight }} g/mol <br />
@@ -39,7 +39,8 @@
                     {{ molecule.poster.last_name }} {{ molecule.poster.first_name }} <br />
 
                     {% if molecule.tool == MeasurementType.experimental %}
-                    <img src="{{url_for('static', filename='images/test-tube.svg')}}" alt="Test Tube" width="16" height="16" style="filter: invert(100%) brightness(100%);">
+                    <img src="{{url_for('static', filename='images/test-tube.svg')}}" alt="Test Tube" width="16"
+                        height="16" style="filter: invert(100%) brightness(100%);">
                     <i></i> <strong>Method:</strong>
                     Experimental
                     {% else %}
@@ -53,7 +54,7 @@
 
                     <i class="bi bi-graph-up-arrow"></i> <strong>Max g-factor:</strong>
                     {{ max_g | round(5) }} ({{ wvl_maxg }} nm)
-                    
+
 
                 </p>
             </div>
@@ -65,8 +66,9 @@
         <div class="card shadow-lg h-100"
             style="border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);">
             <div class="card-body">
+                <h5 class="card-subtitle", style="padding-bottom: 10pt;">Upladed Data</h5>
                 <!-- View 3D Structure -->
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#collapseExample"
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#collapseExample"
                     role="button" aria-expanded="false" aria-controls="collapseExample">
                     <i class="bi bi-badge-3d"></i> View 3D Structure
                 </a>
@@ -98,10 +100,11 @@
                     </div>
                 </div>
 
-                
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
+
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
                     aria-expanded="false" aria-controls="2d_struc">
-                                         <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16" height="16" style="filter: invert(100%) brightness(100%);">
+                    <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16"
+                        height="16" style="filter: invert(100%) brightness(100%);">
                     2D Structure
                 </a>
 
@@ -109,21 +112,24 @@
                     {% if molecule.two_d_struc%}
                     <div class="p-3 border bg-light">
 
-                            <img class="card-img-top" src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}" alt="Benzene molecule 2d structure" width="20" >
+                        <img class="card-img-top"
+                            src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}"
+                            alt="Benzene molecule 2d structure" width="20">
 
 
                     </div>
                     {%else%}
                     <div class="p-3 border bg-light">
                         <script src="https://www.biblegateway.com/votd/votd.write.callback.js"></script>
-                        <script src="https://www.biblegateway.com/votd/get/?format=json&version=KJV&callback=BG.votdWriteCallback"></script>
+                        <script
+                            src="https://www.biblegateway.com/votd/get/?format=json&version=KJV&callback=BG.votdWriteCallback"></script>
                     </div>
                     {%endif%}
                 </div>
-                
-                
+
+
                 <!-- Absorption Spectrum -->
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button"
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button"
                     aria-expanded="false" aria-controls="abs_spec">
                     <i class="bi bi-graph-up"></i> Absorption Spectrum
                 </a>
@@ -141,7 +147,7 @@
                 </div>
 
                 <!-- ECD Spectrum -->
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#ecd_spec" role="button"
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#ecd_spec" role="button"
                     aria-expanded="false" aria-controls="ecd_spec">
                     <i class="bi bi-graph-up"></i> ECD Spectrum
                 </a>
@@ -158,8 +164,9 @@
                     </div>
                 </div>
 
+                <h5 class="card-subtitle", style="padding-bottom: 10pt; padding-top: 10pt;">Computed Data</h5>
                 <!-- g Factor -->
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#g_fac" role="button"
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#g_fac" role="button"
                     aria-expanded="false" aria-controls="g_fac">
                     <i class="bi bi-graph-up"></i> g Factor
                 </a>
@@ -175,8 +182,8 @@
                         {% endif %}
                     </div>
                 </div>
-                
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#alpha_a" role="button"
+
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_a" role="button"
                     aria-expanded="false" aria-controls="g_fac">
                     <i class="bi bi-graph-up"></i> Achiral Polarizability
                 </a>
@@ -193,7 +200,7 @@
                     </div>
                 </div>
 
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#alpha_c" role="button"
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_c" role="button"
                     aria-expanded="false" aria-controls="g_fac">
                     <i class="bi bi-graph-up"></i> Chiral Polarizability
                 </a>
@@ -210,100 +217,102 @@
                     </div>
                 </div>
 
-                {% if current_user.is_authenticated %}
-                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#download_csv" role="button"
-                    aria-expanded="false" aria-controls="download_csv">
-                    <i class="bi bi-download"></i> Download Data as CSV
-                </a>
-                <div class="collapse" id="download_csv">
+                <h5 class="card-subtitle", style="padding-bottom: 10pt; padding-top: 10pt;">Data Retrieval</h5>
+
+
+            {% if current_user.is_authenticated %}
+            <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#download_csv" role="button"
+                aria-expanded="false" aria-controls="download_csv">
+                <i class="bi bi-download"></i> Download Data as CSV
+            </a>
+            <div class="collapse" id="download_csv">
+                <div class="p-3 border bg-light">
+                    <h3>Select Data to Include in CSV:</h3>
+                    <form method="POST" action="{{ url_for('molecule', id=molecule.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-check">
+                            {{ form.absorption.label }} {{ form.absorption(class="form-check-input") }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.ecd.label }} {{ form.ecd(class="form-check-input") }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
+                        </div>
+                        <div class="form-check">
+                            {{ form.alpha_c.label }} {{ form.alpha_c(class="form-check-input") }}
+                        </div>
+
+                        {{ form.submit(class="btn btn-primary mt-3") }}
+                    </form>
+                    <br />
+                    <p>
+                        Please cite the following references if you use this data
                     <div class="p-3 border bg-light">
-                        <h3>Select Data to Include in CSV:</h3>
-                        <form method="POST" action="{{ url_for('molecule', id=molecule.id) }}">
-                            {{ form.hidden_tag() }}
-                            <div class="form-check">
-                                {{ form.absorption.label }} {{ form.absorption(class="form-check-input") }}
-                            </div>
-                            <div class="form-check">
-                                {{ form.ecd.label }} {{ form.ecd(class="form-check-input") }}
-                            </div>
-                            <div class="form-check">
-                                {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
-                            </div>
-                            <div class="form-check">
-                                {{ form.alpha_c.label }} {{ form.alpha_c(class="form-check-input") }}
-                            </div>
-
-                            {{ form.submit(class="btn btn-primary mt-3") }}
-                        </form>
-                        <br/>
-                        <p>
-                            Please cite the following references if you use this data
-                            <div class="p-3 border bg-light">
-                                <div class="p-3 border bg-light">
-                                    {% for pub in pub_metadata %}
-                                        <i class="bi bi-book-fill"></i> 
-                                        <em>{{ pub.title or "Unknown Title" }}</em>
-                                        {% if pub.authors %}
-                                            {{ pub.authors | join(", ") }}
-                                        {% else %}
-                                            by Unknown Authors
-                                        {% endif %}
-                                        <br>
-                                    {% else %}
-                                        <p>No references available.</p>
-                                    {% endfor %}
-                                </div>
-                                <a href="/molecule/{{ molecule.id }}/bibtex" class="btn btn-success" role="button">
-                                    Download as BibTeX
-                                </a>
-                            </div>
-                            
-                        </p>
+                        <div class="p-3 border bg-light">
+                            {% for pub in pub_metadata %}
+                            <i class="bi bi-book-fill"></i>
+                            <em>{{ pub.title or "Unknown Title" }}</em>
+                            {% if pub.authors %}
+                            {{ pub.authors | join(", ") }}
+                            {% else %}
+                            by Unknown Authors
+                            {% endif %}
+                            <br>
+                            {% else %}
+                            <p>No references available.</p>
+                            {% endfor %}
+                        </div>
+                        <a href="/molecule/{{ molecule.id }}/bibtex" class="btn btn-success" role="button">
+                            Download as BibTeX
+                        </a>
                     </div>
-                   
-                </div>
-                {% else %}
-                <!-- Disabled download button for unauthenticated users -->
-                <a class="btn btn-outline-light w-100 mb-3 disabled-download" role="button" aria-expanded="false"
-                    aria-controls="download_csv">
-                    <i class="bi bi-download"></i> Download Data as CSV
-                </a>
-                
-                {% endif %}
 
+                    </p>
+
+                    {% else %}
+                    <!-- Disabled download button for unauthenticated users -->
+                    <a class="btn btn-outline-light w-100 mb-3 disabled-download" role="button" aria-expanded="false"
+                        aria-controls="download_csv">
+                        <i class="bi bi-download"></i> Download Data as CSV
+                    </a>
+
+                    {% endif %}
+
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Back and Delete Buttons -->
-<div class="d-flex justify-content-between mt-4">
-    <a class="btn btn-outline-primary" href="{{ url_for('all_molecules') }}"><i class="bi bi-list-columns-reverse"></i>
-        Back to Molecules List</a>
-    <a class="btn btn-outline-danger" href="{{url_for('delete_mol', id=molecule.id)}}"><i class="bi bi-trash"></i>
-        Delete Molecule</a>
-    <a class="btn btn-outline-success" href="{{url_for('update_mol', id=molecule.id)}}"><i class="bi bi-pencil"></i>
+    <!-- Back and Delete Buttons -->
+    <div class="d-flex justify-content-between mt-4">
+        <a class="btn btn-outline-primary" href="{{ url_for('all_molecules') }}"><i
+                class="bi bi-list-columns-reverse"></i>
+            Back to Molecules List</a>
+        <a class="btn btn-outline-danger" href="{{url_for('delete_mol', id=molecule.id)}}"><i class="bi bi-trash"></i>
+            Delete Molecule</a>
+        <a class="btn btn-outline-success" href="{{url_for('update_mol', id=molecule.id)}}"><i class="bi bi-pencil"></i>
             Edit Molecule</a>
-</div>
+    </div>
 
-<!-- Plotly and Viewer JS -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
-    window.onload = function () {
-        var plotDivs = document.querySelectorAll('.plotly-plot');
-        plotDivs.forEach(function (div) {
-            Plotly.Plots.resize(div);
-        });
-    };
+    <!-- Plotly and Viewer JS -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        window.onload = function () {
+            var plotDivs = document.querySelectorAll('.plotly-plot');
+            plotDivs.forEach(function (div) {
+                Plotly.Plots.resize(div);
+            });
+        };
 
-    window.onresize = function () {
-        var plotDivs = document.querySelectorAll('.plotly-plot');
-        plotDivs.forEach(function (div) {
-            Plotly.Plots.resize(div);
-        });
-    };
-</script>
-<script src="{{ url_for('static', filename='js/molecule_viewer.js') }}"></script>
-<script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
+        window.onresize = function () {
+            var plotDivs = document.querySelectorAll('.plotly-plot');
+            plotDivs.forEach(function (div) {
+                Plotly.Plots.resize(div);
+            });
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/molecule_viewer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
 
-{% endblock %}
+    {% endblock %}
