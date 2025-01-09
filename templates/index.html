@@ -1,18 +1,182 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>HomePage</h1>
-<h2>ChiralForce DB</h2>
-<div class="card">
+<h1 class="visually-hidden">HomePage</h1> <!-- Hidden for accessibility -->
+
+<!-- Hero section with enhanced parallax scrolling -->
+<div class="hero-section" style="position: relative; height: 40vh; overflow: hidden;">
+    <div class="parallax" id="parallax-bg" style="
+         background-image: url('{{ url_for('static', filename='images/heli_light.png') }}'); 
+         background-size: cover; 
+         background-position: center; 
+         height: 100%; 
+         width: 100%; 
+         transform: translateY(0);
+         transition: transform 0.2s ease-out;
+	 z-index:-1;">
+    </div>
+
+    <!-- Gradient overlay for a richer visual effect -->
+    <div class="hero-overlay" style="
+         position: absolute; 
+         top: 0; 
+         left: 0; 
+         width: 100%; 
+         height: 100%; 
+         background: linear-gradient(135deg, rgba(255, 140, 0, 0.7), rgba(0, 0, 0, 0.7)); 
+         display: flex; 
+         justify-content: center; 
+         align-items: center;
+	 z-index: 1;">
+        <h2 class="hero-text" style="
+            color: white; 
+            font-size: 3rem; 
+            text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.8); 
+            animation: fadeIn 2s ease-out;">
+            Welcome to ChiralDB
+        </h2>
+    </div>
 </div>
 
-    <p>
+<!-- JavaScript for dynamic parallax effect -->
+<script>
+document.addEventListener("scroll", function () {
+    const parallax = document.getElementById("parallax-bg");
+    const scrollPosition = window.scrollY;
+    parallax.style.transform = `translateY(${scrollPosition * 0.5}px)`;
+});
+</script>
+
+<!-- CSS animations for text -->
+<style>
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<br />
+
+<!-- Presentation card -->
+<div class="card shadow-lg mb-4" style="border-radius: 15px; overflow: hidden;">
+  <div class="card-body" style="padding: 2rem; background: #fefefe; border: 1px solid #e0e0e0;">
+    <h5 class="card-title" style="font-size: 1.8rem; font-weight: bold; color: #ff8c00;">What is ChiralDB</h5>
+    <p style="line-height: 1.8;">
+      ChiralDB is an open-source database for chiral nanomaterials, including both molecules and clusters.
+      It is especially dedicated to the collection of spectroscopic data and the automated computation of
+      properties such as the g-factor and the polarizability, both chiral and achiral.
+
+      Compared to other broader projects, such as
+      <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" 
+         href="https://nomad-lab.eu/nomad-lab/">NOMAD</a>, it is more restricted in scope. However,
+      it provides an out-of-the-box, user-friendly platform for uploading and sharing optical data concerning
+      chiral nanomaterials. It enables users to explore the properties of such objects effectively.
     </p>
+  </div>
+</div>
 
-    <img src="{{ url_for('static', filename='images/heli_light.png') }}" alt="sussy molecule in void" width="1100px">
+<!-- Functionality card -->
+<div class="card shadow-lg mb-4" style="border-radius: 15px; overflow: hidden;">
+  <div class="card-body" style="padding: 2rem; background: #fefefe; border: 1px solid #e0e0e0;">
+    <h5 class="card-title" style="font-size: 1.8rem; font-weight: bold; color: #ff8c00;">What can you do with ChiralDB</h5>
+    <p style="line-height: 1.8;">
+    At its core, ChiralDB is a chiral nanomaterials database with a user-friendly web interface. However, as hinted previously, it also provides users with a simple automated computation of
+    properties starting from the provided spectral data, either computed with ab-initio or classical methods or obtained, more traditionally, through experiments. As it stands, ChiralDB provides the following functionalities:
 
-    <br /><br />
+    <div class="accordion accordion-flush" id="upload">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+        Data Upload
+      </button>
+    </h2>
+    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#upload">
+      <div class="accordion-body">
+        <strong>This is the first step in the use of ChiralDB.</strong> Users can upload a molecule for which they obtained spectral data. The upload process itself is straightforward: registered users access a form with
+        fields for the different properties of the molecule, e.g., the name, the chemical composition, etc., and a file upload field for a CSV file containing the spectral properties. After submission, the molecule is
+        inserted into the database, and the relevant additional properties are computed automatically in the backend.
+      </div>
+    </div>
+  </div>
 
-    <p id="demo">This is stuf...</p>
-    <script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+        G-Factor
+      </button>
+    </h2>
+    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#upload">
+      <div class="accordion-body">
+	      <strong>The g-factor is a measure of the chiroptical activity of the molecule</strong>. In itself, it is just the ratio between the ECD and the absorption spectrum of the molecule. ChiralDB automatically computes it
+        for every value of the wavelength for which spectral data were computed/measured. It also identifies its maximum absolute value and the corresponding wavelength.
+      </div>
+    </div>
+  </div>
 
-    {% endblock %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+        Polarizabilities
+      </button>
+    </h2>
+    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#upload">
+      <div class="accordion-body">
+	      <strong>Thanks to a Python function provided by S. Golat at KCL</strong>, ChiralDB is able to compute the full complex chiral and achiral polarizabilities of the uploaded molecule. While the polarizabilities are
+        defined as tensorial quantities depending on the orientation of the molecules, here we take an isotropy assumption, considering that the measurements are done experimentally
+        on samples where the molecules are randomly oriented. 
+</br>
+
+<!--$$\alpha_c =  {1 \over 2\pi} {\lambda \over n_sl}{1 \over CN_A} \text{arctanh}(\tan(-\theta))$$-->
+</br>
+	Computationally, the spectral data is obtained by computing the trace over different orientations, thus obtaining scalar
+        polarizabilities, which, in relation to the fully tensorial quantities, can be seen as the trace.
+
+        Spectral data only allow us to compute the <strong>imaginary part</strong> of the complex polarizabilities. In the code, we exploit the analytical properties of such quantities
+        to compute the real part using the Kramers-Kronig relations.
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+        Comparison
+      </button>
+    </h2>
+    <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#upload">
+      <div class="accordion-body">
+	      One of the things we are interested in is the <strong>comparison of the properties between different molecules</strong>. ChiralDB allows users to compare two molecules
+        to study their differences. This can be performed on two different molecules, say a Hexahelicene and a Br-Hexahelicene, on the same molecule obtained under different
+        experimental/computational conditions (different solvent, concentration, etc.) or between experimental and computational results.
+
+        The comparison presents graphs with the spectral and computed properties represented in the same plot so that users can have a quick qualitative look
+        at the differences between the results.
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+        Raw Data Retrieval
+      </button>
+    </h2>
+    <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#upload">
+      <div class="accordion-body">
+        Users may be interested in conducting more thorough inspections on the data, both computed and uploaded by other users. This is possible by using the <strong>download CSV</strong> functionality
+        present in every molecule data card. Users may select one or more of the fields which will then be inserted into a CSV file downloaded to the user's computer. Publications indicated in the upload
+        procedure can also be downloaded as a BibTeX file so that data used in a publication can then be properly referenced.
+      </div>
+    </div>
+  </div>
+    </div>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
