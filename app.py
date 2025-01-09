@@ -42,13 +42,9 @@ ckeditor = CKEditor(app)
 
 
 #add database
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Aeronautica97@localhost/our_users'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Aeronautica97@localhost:5432/chiraldb'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
 
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://chiraldb_user:LxOXH6O5iVV3k1ixj2RxIEjh06g3R9KV@dpg-cs3u7bogph6c73c879b0-a/chiraldb'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 #secret key
@@ -460,8 +456,8 @@ def add_molecule():
         #     molecule.ecd_re.append(float(re_ecd[i]))
         
         ecd_mdeg = ext_to_mdeg(ecd, M, C, L)
-        
-        polar = polarisability(wvl, abso, ecd_mdeg , C * 1000 / M, L, 1.0)
+        abs_abs = ext_to_abs(abso, M, C, L) 
+        polar = polarisability(wvl, abs_abs, ecd_mdeg , C * 1000 / M, L, 1.0)
         
         im_alphac = np.imag(polar[1])
         re_alphac = np.real(polar[1])
@@ -472,7 +468,7 @@ def add_molecule():
             molecule.chir_pol_im.append(float(im_alphac[i]))
             molecule.chir_pol_re.append(float(re_alphac[i]))
             molecule.achir_pol_im.append(float(im_alphaa[i]))
-            molecule.achir_pol_im.append(float(re_alphaa[i]))
+            molecule.achir_pol_re.append(float(re_alphaa[i]))
 
         try:
             print(f"Inserting molecule with: {molecule.__dict__}")  # Debug line
@@ -557,8 +553,8 @@ def molecule(id):
     im_alpha_a_trace = go.Scatter(x = wvl, y = im_alphaa, mode = 'lines', name = 'Im(Alpha_a)', line = dict(color='magenta'))
     re_alpha_a_trace = go.Scatter(x = wvl, y = re_alphaa, mode = 'lines', name = 'Re(Alpha_a)', line = dict(color='green'))
 
-    alpha_c_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Alpha_c'), hovermode='closest', autosize=True)
-    alpha_a_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Alpha_a'), hovermode='closest', autosize=True)
+    alpha_c_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability'), hovermode='closest', autosize=True)
+    alpha_a_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Achiral Polarizability'), hovermode='closest', autosize=True)
 
     ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='yellow'))
     ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
@@ -600,9 +596,10 @@ def molecule(id):
             header.append('g Factor')
         if form.abs_re.data:
             header.append('Absorption (Re)')
+        if form.alpha_a.data:
+            header.append('Chiral Pol (Im)')
         if form.alpha_c.data:
-            header.append('Alpha c (Im)')
-
+            header.append('Achiral Pol (Im)')
 
         writer.writerow(header)
         s = 0
@@ -615,6 +612,8 @@ def molecule(id):
                 row.append(ecd_data[i])
             if form.gfactor.data:
                 row.append(g_fac[i])
+            if form.alpha_a.data:
+                row.append(im_alphaa[i])
             if form.alpha_c.data:
                 row.append(im_alphac[i])
 
@@ -826,7 +825,7 @@ def compare_mols(id1, id2):
     
     #max g fac for mol 2
     id_max_g2 = np.argmax(np.abs(g_fac2))
-    max_g2 = g_fac1[id_max_g2]
+    max_g2 = g_fac2[id_max_g2]
     wvl_maxg2 = wvl2[id_max_g2]
     
     g_fac_trace1 = go.Scatter(x=wvl1, y=g_fac1, mode='lines', name='g factor {}'.format(mol_1.name), line=dict(color='orange'))
