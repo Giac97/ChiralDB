@@ -87,4 +87,22 @@ aria-expanded="false" aria-controls="g_fac">
     {% endif %}
 </div>
 </div>
+
+<!-- Chiral Polarizability -->
+<a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#chir_pol" role="button"
+aria-expanded="false" aria-controls="g_fac">
+<i class="bi bi-graph-up"></i> Chiral Polarizability
+</a>
+<div class="collapse" id="chir_pol">
+<div class="p-3 border bg-light">
+    <h2>Chiral Polarizability</h2>
+    {% if chir_pol_div %}
+    <div class="plot-container">
+        {{ chir_pol_div|safe }}
+    </div>
+    {% else %}
+    <p>No Chiral POlarizability data to display.</p>
+    {% endif %}
+</div>
+</div>
 {% endblock %}

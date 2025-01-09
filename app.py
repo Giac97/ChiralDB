@@ -350,6 +350,7 @@ def delete_post(id):
 #######Below Molecule Stuff################
 ###########################################
 from elli.kkr.kkr import im2re_reciprocal
+from scipy.signal import hilbert
 import pubchempy as pcp
 @app.route("/molecule/add_molecule", methods=['GET', 'POST'])
 @login_required
@@ -399,7 +400,7 @@ def add_molecule():
                 next(data)
             wvl = np.zeros(n_points)
             ecd = np.zeros(n_points)
-            abs = np.zeros(n_points)
+            abso = np.zeros(n_points)
 
         twod_filename = None
         if twod_file:
@@ -426,7 +427,11 @@ def add_molecule():
             absortion = [],
             absortion_re = [],
             ecd_re = [],
-            ecd = []
+            ecd = [],
+            chir_pol_im = [],
+            chir_pol_re = [],
+            achir_pol_im = [],
+            achir_pol_re = [],
         )
         C = float(form.concentration.data)
         L = 1.0
@@ -444,7 +449,8 @@ def add_molecule():
             molecule.wavelength.append(float(wv))
             molecule.absortion.append(float(ab))
             molecule.ecd.append(float(cd))
-            abs[i] = ab
+            abso[i] = ab
+            ecd[i] = cd
             wvl[i] = wv
         #re_abs = im2re_reciprocal(abs[1:], wvl[1:])
         #re_ecd = im2re_reciprocal(ecd[1:], wvl[1:])
@@ -452,6 +458,22 @@ def add_molecule():
         # for i in range(n_points):
         #     molecule.absortion_re.append(float(re_abs[i]))
         #     molecule.ecd_re.append(float(re_ecd[i]))
+        
+        ecd_mdeg = ext_to_mdeg(ecd, M, C, L)
+        
+        polar = polarisability(wvl, abso, ecd_mdeg , C * 1000 / M, L, 1.0)
+        
+        im_alphac = np.imag(polar[1])
+        re_alphac = np.real(polar[1])
+
+        im_alphaa = np.imag(polar[0])
+        re_alphaa = np.real(polar[0])
+        for i in range(n_points):
+            molecule.chir_pol_im.append(float(im_alphac[i]))
+            molecule.chir_pol_re.append(float(re_alphac[i]))
+            molecule.achir_pol_im.append(float(im_alphaa[i]))
+            molecule.achir_pol_im.append(float(re_alphaa[i]))
+
         try:
             print(f"Inserting molecule with: {molecule.__dict__}")  # Debug line
             db.session.add(molecule)
@@ -468,7 +490,6 @@ def add_molecule():
     return render_template("add_molecule.html", form=form)
 
 
-from scipy.signal import hilbert
 
 @app.route("/molecule/<int:id>/", methods=['GET', 'POST'])
 def molecule(id):
@@ -497,15 +518,20 @@ def molecule(id):
     C = molecule.concentration
     M = molecule.molecular_weight
 
-    ecd_mdeg = ext_to_mdeg(ecd_abs, M, C, L)
+    #ecd_mdeg = ext_to_mdeg(ecd_abs, M, C, L)
     
-    polar = polarisability(wvl, ext_to_abs(abs_arr, M=M, C=C, L=L), ecd_mdeg , C * 1000 / M, L, 1.0)
+    #polar = polarisability(wvl, ext_to_abs(abs_arr, M=M, C=C, L=L), ecd_mdeg , C * 1000 / M, L, 1.0)
     
-    im_alphac = np.imag(polar[1])
-    re_alphac = np.real(polar[1])
 
-    im_alphaa = np.imag(polar[0])
-    re_alphaa = np.real(polar[0])
+    #im_alphac = np.imag(polar[1])
+    #re_alphac = np.real(polar[1])
+
+    im_alphac = molecule.chir_pol_im
+    re_alphac = molecule.chir_pol_re
+    #im_alphaa = np.imag(polar[0])
+    #re_alphaa = np.real(polar[0])
+    im_alphaa = molecule.achir_pol_im
+    re_alphaa = molecule.achir_pol_re
 
     print(im_alphac)
     id_max_g = np.argmax(np.abs(g_fac))
@@ -747,6 +773,7 @@ def compare_mols(id1, id2):
     ecd_data = [mol_1.ecd, mol_2.ecd]
     absorption1_trace = go.Scatter(x=wvl[0], y=abs_data[0], mode='lines', name='Absorption {}'.format(mol_1.name), line=dict(color='blue'))
     absorption2_trace = go.Scatter(x=wvl[1], y=abs_data[1], mode='lines', name='Absorption {}'.format(mol_2.name), line=dict(color='red'))
+    chirpol_data = [mol_1.chir_pol_im, mol_2.chir_pol_im]
 
     ecd1_trace = go.Scatter(x=wvl[0], y=ecd_data[0], mode='lines', name='ECD {}'.format(mol_1.name), line=dict(color='blue'))
     ecd2_trace = go.Scatter(x=wvl[1], y=ecd_data[1], mode='lines', name='ECD {}'.format(mol_2.name), line=dict(color='red'))
@@ -759,6 +786,12 @@ def compare_mols(id1, id2):
     
     absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+    
+    chir_pol1_trace = go.Scatter(x=wvl[0], y=chirpol_data[0], mode='lines', name='Chiral Polarizability {}'.format(mol_1.name), line=dict(color='blue'))
+    chir_pol2_trace = go.Scatter(x=wvl[1], y=chirpol_data[1], mode='lines', name='Chiral Polarizability {}'.format(mol_2.name), line=dict(color='red'))
+    chir_pol_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability'), hovermode='closest', autosize=True)
+    chir_pol_figure = go.Figure(data=[chir_pol1_trace,chir_pol2_trace ], layout=chir_pol_layout)
+    chir_pol_div = chir_pol_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     
     ecd_arr1 = np.array(ecd_data[0])
     ecd_arr2 = np.array(ecd_data[1])
@@ -811,6 +844,7 @@ def compare_mols(id1, id2):
         absorption_plot_div=absorption_plot_div,
         ecd_plot_div = ecd_plot_div,
         gfac_plot_div=gfac_plot_div,
+        chir_pol_div = chir_pol_div,
         max_g1=max_g1,
         wvl_maxg1=wvl_maxg1,
         max_g2=max_g2,
@@ -1060,7 +1094,10 @@ class Molecule(db.Model):
     ecd = db.Column(ARRAY(db.Float)) 
     absortion_re = db.Column(ARRAY(db.Float)) 
     ecd_re = db.Column(ARRAY(db.Float))
-    
+    chir_pol_im = db.Column(ARRAY(db.FLOAT))  
+    chir_pol_re = db.Column(ARRAY(db.FLOAT))  
+    achir_pol_im = db.Column(ARRAY(db.FLOAT))  
+    achir_pol_re = db.Column(ARRAY(db.FLOAT))  
     
     
 class ResearchGroup(db.Model):
