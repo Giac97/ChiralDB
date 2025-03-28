@@ -15,7 +15,8 @@ class PostForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     content = CKEditorField("Content", validators=[DataRequired()])
     author = StringField("Author")
-    slug = StringField("Slug",validators=[DataRequired()])
+    slug = StringField("Email",validators=[DataRequired()])
+    molecule_id = SelectField("Molecule", coerce=int, validators=[DataRequired()])
     submit = SubmitField("Submit")
     
 #Create form class
@@ -41,7 +42,7 @@ class MoleculeForm(FlaskForm):
     composition = StringField("Molecule chemical composition", validators=[DataRequired()])
     twod_struc = FileField("2D Structure")
     raw_data = FileField("Spectral Data")
-    publication = StringField("Publications, separate with comma", validators=[DataRequired()], widget=TextArea())
+    publication = StringField("Publications, separate with comma", widget=TextArea())
     author = StringField("Author")
     pubchem_id = IntegerField("PubChem CID (if available)")
     molecular_weight = FloatField("Molecular Weight (empty if CID given)")
@@ -105,5 +106,6 @@ class CSVExportForm(FlaskForm):
     ecd = BooleanField('ECD', default=True)
     abs_re = BooleanField("Absorption (Re)")
     gfactor = BooleanField('g Factor')
-    alpha_c = BooleanField('Alpha_c')
+    alpha_c = BooleanField('Chiral Polarizability')
+    alpha_a = BooleanField('Achiral Polarizability')
     submit = SubmitField('Download CSV')
