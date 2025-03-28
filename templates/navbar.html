@@ -4,81 +4,82 @@
   }
 </style>
 <nav class="navbar navbar-expand-lg navbar-dark navbar-gradient">
-	<div class="container-fluid">
+    <div class="container-fluid">
         <a class="navbar-brand" href="{{url_for('index')}}" style="font-weight: 600;">
             <img src="{{ url_for('static', filename='images/chiralforce.png') }}" width="30" height="30" class="d-inline-block align-top" alt="">
-	    ChiralDB
-          </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{{url_for('index')}}">Home</a>
-          </li>
+            ChiralDB
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="{{url_for('index')}}">Home</a>
+                </li>
 
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link a_nav" href="{{url_for('logout')}}">Logout</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('dashboard')}}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('create_group')}}">Create Group</a>
+                    </li>
 
+                    {% set is_admin = false %}
+                    {% for role in current_user.roles %}
+                        {% if role.name == 'Admin' %}
+                            {% set is_admin = true %}
+                        {% endif %}
+                    {% endfor %}
 
-          
-          
-          {% if current_user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link a_nav" href="{{url_for('logout')}}">Logout</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{url_for('dashboard')}}">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{url_for('create_group')}}">Create Group</a>
-          </li>
-          {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{url_for('add_user')}}">Register</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link a_nav" href="{{url_for('login')}}">Login</a>
-          </li>
-          {% endif %}
-          
-          
-      
+                    {% if is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{url_for('admin_dashboard')}}">Admin Dashboard</a>
+                        </li>
+                    {% endif %}
 
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('add_user')}}">Register</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link a_nav" href="{{url_for('login')}}">Login</a>
+                    </li>
+                {% endif %}
 
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle"  id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Molecules
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{{url_for('add_molecule')}}">Add Molecule</a></li>
+                        <li><a class="dropdown-item" href="{{url_for('all_molecules')}}">View Molecules</a></li>
+                        <li><a class="dropdown-item" href="{{url_for('select_multiple_molecules')}}">Compare Molecules</a></li>
+                        <li><a class="dropdown-item" href="{{url_for('compare_all')}}">Compare All Molecules</a></li>
+                        <li><a class="dropdown-item" href="{{url_for('add_post')}}">Create Post</a></li>
+                    </ul>
+                </li>
 
-
-
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle"  id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Molecules
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="{{url_for('add_molecule')}}">Add Molecule</a></li>
-              <li><a class="dropdown-item" href="{{url_for('all_molecules')}}">View Molecules</a></li>
-              <li><a class="dropdown-item" href="{{url_for('select_molecules')}}">Compare Molecules</a></li>
-
-              
             </ul>
-          </li>
 
-
-        </ul>
-
-        <form method="post" action="{{url_for('search')}}" class="d-flex" role="search">
-            {{form.hidden_tag()}}
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name = "searched">
-          <div class="btn-group">
-            <button class="btn btn-success" type="submit">Search</button>
-            <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-              <span class="visually-hidden">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-lg-end">
-              <li><a class="dropdown-item" href="{{url_for('advanced_search')}}">Advanced Search </a></li>
-            </ul>
-          </div>
-          
-        </form>
-
-      </div>
+            <form method="post" action="{{url_for('search')}}" class="d-flex" role="search">
+                {{form.hidden_tag()}}
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name = "searched">
+                <div class="btn-group">
+                    <button class="btn btn-success" style="background-color:#bc3d0a; outline-color:#bc3d0a; font-weight:700;" type="submit">Search</button>
+                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" style="background-color:#bc3d0a; outline-color:#bc3d0a; font-weight:700;" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-lg-end">
+                        <li><a class="dropdown-item" href="{{url_for('advanced_search')}}">Advanced Search </a></li>
+                    </ul>
+                </div>
+            </form>
+        </div>
     </div>
-  </nav>
+</nav>
+

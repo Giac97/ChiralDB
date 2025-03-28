@@ -17,7 +17,7 @@
 
 <div class="shadow p-3 mb-5 bg-body rounded">
 
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('add_molecule') }}">
+  <form method="POST" enctype="multipart/form-data" action="{{url_for('add_molecule')}}" >
         {{ form.hidden_tag() }}
     
         {{ form.name.label(class="form-label") }}

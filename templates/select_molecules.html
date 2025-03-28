@@ -11,7 +11,8 @@
 <div class="container mt-5">
     <h1 class="mb-4">Compare Molecules</h1>
     <form method="POST" action="{{ url_for('select_molecules') }}">
-        <div class="mb-3">
+    {{ form.csrf_token }}
+      <div class="mb-3">
             <label for="molecule1" class="form-label">Select First Molecule</label>
             <select class="form-select" id="molecule1" name="molecule1" required>
                 <option value="" selected disabled>Select a molecule</option>

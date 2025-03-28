@@ -14,9 +14,9 @@ aria-expanded="false" aria-controls="abs_spec">
 <div class="collapse" id="abs_spec">
 <div class="p-3 border bg-light">
     <h2>Absorption Spectrum</h2>
-    {% if absorption_plot_div %}
+    {% if abs_plot_div %}
     <div class="plot-container">
-        {{ absorption_plot_div|safe }}
+        {{ abs_plot_div|safe }}
     </div>
     {% else %}
     <p>No absorption data to display.</p>
@@ -41,6 +41,8 @@ aria-expanded="false" aria-controls="ecd_spec">
     {% endif %}
 </div>
 </div>
+
+
 <!-- g Factor -->
 <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#g_fac" role="button"
 aria-expanded="false" aria-controls="g_fac">
@@ -53,35 +55,7 @@ aria-expanded="false" aria-controls="g_fac">
     <div class="plot-container">
         {{ gfac_plot_div|safe }}
     </div>
-    <div class ="p-3 border bg-light">
-        Maximum g-factor
-        <table class="table  table-hover">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Molecule Name</th>
-                    <th scope="col">Max g-fac</th>
-                    <th scope="col">Wavelgth max g-fac</th>
-                </tr>
-            </thead>
 
-            <tbody>
-                <tr>
-                    <th scope="row">{{molecule1.id}}</th>
-                    <td>{{molecule1.name}}</th>
-                    <td>{{max_g1  | round(5)}}</th>
-                    <td>{{wvl_maxg1}}</th>
-                </tr>
-                <tr>
-                    <th scope="row">{{molecule2.id}}</th>
-                    <td>{{molecule2.name}}</th>
-                    <td>{{max_g2  | round(5)}}</th>
-                    <td>{{wvl_maxg2}}</th>
-                </tr>
-            </tbody>
-        </table>
-        {{molecule1.name}}
-    </div>
     {% else %}
     <p>No g-factor data to display.</p>
     {% endif %}
@@ -96,9 +70,9 @@ aria-expanded="false" aria-controls="g_fac">
 <div class="collapse" id="chir_pol">
 <div class="p-3 border bg-light">
     <h2>Chiral Polarizability</h2>
-    {% if chir_pol_div %}
+    {% if chir_plot_div %}
     <div class="plot-container">
-        {{ chir_pol_div|safe }}
+        {{ chir_plot_div|safe }}
     </div>
     {% else %}
     <p>No Chiral POlarizability data to display.</p>
@@ -113,13 +87,14 @@ aria-expanded="false" aria-controls="g_fac">
 <div class="collapse" id="achir_pol">
 <div class="p-3 border bg-light">
     <h2>Achiral Polarizability</h2>
-    {% if achir_pol_div %}
+    {% if achir_plot_div %}
     <div class="plot-container">
-        {{ achir_pol_div|safe }}
+        {{ achir_plot_div|safe }}
     </div>
     {% else %}
     <p>No Achiral POlarizability data to display.</p>
     {% endif %}
 </div>
 </div>
+
 {% endblock %}

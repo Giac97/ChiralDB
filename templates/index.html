@@ -61,6 +61,7 @@
       ChiralDB is an open-source database for chiral nanomaterials, including both molecules and clusters.
       It is especially dedicated to the collection of spectroscopic data and the automated computation of
       properties such as the g-factor and the polarizability, both chiral and achiral.
+      </br>
 
       Compared to other broader projects, such as
       <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" 
@@ -144,7 +145,7 @@
 	      One of the things we are interested in is the <strong>comparison of the properties between different molecules</strong>. ChiralDB allows users to compare two molecules
         to study their differences. This can be performed on two different molecules, say a Hexahelicene and a Br-Hexahelicene, on the same molecule obtained under different
         experimental/computational conditions (different solvent, concentration, etc.) or between experimental and computational results.
-
+	</br>
         The comparison presents graphs with the spectral and computed properties represented in the same plot so that users can have a quick qualitative look
         at the differences between the results.
       </div>
@@ -162,6 +163,8 @@
         Users may be interested in conducting more thorough inspections on the data, both computed and uploaded by other users. This is possible by using the <strong>download CSV</strong> functionality
         present in every molecule data card. Users may select one or more of the fields which will then be inserted into a CSV file downloaded to the user's computer. Publications indicated in the upload
         procedure can also be downloaded as a BibTeX file so that data used in a publication can then be properly referenced.
+	</br>
+	Note that, while viewing molecules is allowed to all users, downlaoding raw data is restricted to logged in users.
       </div>
     </div>
   </div>
@@ -170,6 +173,21 @@
     </div>
     </p>
   </div>
+<!-- How ro card -->
+<div class="card shadow-lg mb-4" style="border-radius: 15px; overflow: hidden;">
+  <div class="card-body" style="padding: 2rem; background: #fefefe; border: 1px solid #e0e0e0;">
+    <h5 class="card-title" style="font-size: 1.8rem; font-weight: bold; color: #ff8c00;">How To Use ChiralDB</h5>
+    <p style="line-height: 1.8;">
+     To use the functionalities offered by ChiralDB, first of all you have to <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" 
+ href="{{url_for('add_user')}}">register a new user</a>, note that you can still view the molecules even as an unregistered guest, however you are limited in that you can not add a new molecule nor download data relative to 
+ the molecules. Once you registered a new user you proceed to login with your credentials.
+ </br>
+ To add a new molecule click on the nav bar link <strong>Molecules</strong>, a drop down menu will open up, select <strong>Add molecule</strong>, a form will open up with fields for different properties concerning the 
+ molecule you wnt to add to the database. 
+    </p>
+  </div>
+</div>
+
 <!-- Hero section with enhanced parallax scrolling -->
 <div class="hero-section" style="position: relative; height: 20vh; overflow: hidden;">
     <div class="parallax" id="parallax-bg" style="

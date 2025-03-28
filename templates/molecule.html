@@ -36,6 +36,8 @@
                         <br />
                         <i class="bi bi-people-fill"></i> <strong>Group:</strong> {{ molecule.poster.affiliation }} <br />
                         <i class="bi bi-graph-up-arrow"></i> <strong>Max g-factor:</strong> {{ max_g | round(5) }} ({{ wvl_maxg }} nm)
+                        <br />
+
                     </p>
                 </div>
             </div>
@@ -74,7 +76,31 @@
                             {% endif %}
                         </div>
                     </div>
+			<a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
+                    aria-expanded="false" aria-controls="2d_struc">
+                    <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16"
+                        height="16" style="filter: invert(100%) brightness(100%);color: #000;">
+                    2D Structure
+                </a>
 
+                <div class="collapse" id="2d_struc">
+                    {% if molecule.two_d_struc%}
+                    <div class="p-3 border bg-light">
+
+                        <img class="card-img-top"
+                            src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}"
+                            alt="Benzene molecule 2d structure" width="20">
+
+
+                    </div>
+                    {%else%}
+                    <div class="p-3 border bg-light">
+                        <script src="https://www.biblegateway.com/votd/votd.write.callback.js"></script>
+                        <script
+                            src="https://www.biblegateway.com/votd/get/?format=json&version=KJV&callback=BG.votdWriteCallback"></script>
+                    </div>
+                    {%endif%}
+                </div>
                     <!-- Absorption Spectrum -->
                     <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button" aria-expanded="false" aria-controls="abs_spec">
                         <i class="bi bi-graph-up"></i> Absorption Spectrum
@@ -108,6 +134,34 @@
                             {% endif %}
                         </div>
                     </div>
+
+    <!-- Details -->
+    <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#details" role="button" aria-expanded="false" aria-controls="details">
+        <i class="bi bi-book-half"></i> Details
+    </a>
+    <div class="collapse" id="details">
+        <div class="p-3 border bg-light">
+            <h2>Details</h2>
+            {% if molecule.posts %}
+            <div class="plot-container">
+                {% for post in molecule.posts %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ post.title }}</h5>
+                            <p class="card-text">{{ post.content|safe }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No details to display.</p>
+            {% endif %}
+            {%if current_user.id == molecule.poster.id%}
+            <p>Add post to detail how the molecule data was retrieved</p>
+
+            {%endif%}
+        </div>
+    </div>
 
                     <h5 class="card-subtitle" style="padding-bottom: 10pt; padding-top: 10pt;">Computed Data</h5>
                     <!-- g Factor -->

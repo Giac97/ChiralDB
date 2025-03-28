@@ -8,7 +8,10 @@
             You are not allowed to delete a molecule created by someone else!
         </p>
 
- 
+    {% elif what == "not_logged" %}
+    <p>
+        You have to be logged in and be the uploader to delete a molecule!
+    </p>
     {% else%}
     <p>
         YOu are not allowed to delete a post created by someone else!

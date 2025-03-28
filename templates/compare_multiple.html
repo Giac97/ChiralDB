@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">Molecule Comparison</h1>
+    
+    <div class="row">
+        <div class="col-12">
+            <h2>Molecules Being Compared</h2>
+            <div class="d-flex mb-4">
+                {% for molecule in molecules %}
+                <div class="card me-3" style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ molecule.name }}</h5>
+                        {% if molecule.tool == MeasurementType.experimental %}
+                            <h4><span class="badge bg-success">Experimental</span></h4>
+                            {% else %}
+                            <h4><span class="badge bg-primary">Computational</span></h4>
+                            {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h3>Absorption Spectra</h3>
+            {{ absorption_plot_div | safe }}
+        </div>
+        <div class="col-md-6 mb-4">
+            <h3>ECD Spectra</h3>
+            {{ ecd_plot_div | safe }}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h3>Chiral Polarizability</h3>
+            {{ chir_pol_div | safe }}
+        </div>
+        <div class="col-md-6 mb-4">
+            <h3>Achiral Polarizability</h3>
+            {{ achir_pol_div | safe }}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h3>G-Factor</h3>
+            {{ gfac_plot_div | safe }}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h3>Maximum G-Factor Details</h3>
+            <table class="table table-hover table-bordered table-striped" data-toggle="table" data-pagination="true" data-search="true">
+                <thead>
+                    <tr>
+                        <th data-sortable="true">Molecule</th>
+                        <th data-sortable="true">Method</th>
+                        <th data-sortable="true">Max G-Factor (Absolute Value)</th>
+                        
+                        <th data-sortable="true">Wavelength at Max G-Factor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for molecule in molecules %}
+                    <tr>
+                        <td>
+                            
+                            <p>{{ molecule.name }}</p>
+                            
+                        </td>
+                        <td>
+                            {% if molecule.tool == MeasurementType.experimental %}
+                            <span class="badge bg-success">Experimental</span>
+                             
+                            {% else %}
+                            <span class="badge bg-primary">Computational</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ('%0.4f' | format(max_g_factors[loop.index0] | abs)) }}</td>
+
+                       
+                        <td>{{ wvl_max_g_factors[loop.index0] }} nm</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
