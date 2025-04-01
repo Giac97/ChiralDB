@@ -32,6 +32,9 @@
                     {% set is_admin = false %}
                     {% for role in current_user.roles %}
                         {% if role.name == 'Admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{url_for('admin_dashboard')}}">Admin Dashboard</a>
+                        </li>
                             {% set is_admin = true %}
                         {% endif %}
                     {% endfor %}
@@ -59,8 +62,7 @@
                         <li><a class="dropdown-item" href="{{url_for('add_molecule')}}">Add Molecule</a></li>
                         <li><a class="dropdown-item" href="{{url_for('all_molecules')}}">View Molecules</a></li>
                         <li><a class="dropdown-item" href="{{url_for('select_multiple_molecules')}}">Compare Molecules</a></li>
-                        <li><a class="dropdown-item" href="{{url_for('compare_all')}}">Compare All Molecules</a></li>
-                        <li><a class="dropdown-item" href="{{url_for('add_post')}}">Create Post</a></li>
+                        <li><a class="dropdown-item" href="{{url_for('add_post')}}">Add detail</a></li>
                     </ul>
                 </li>
 

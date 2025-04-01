@@ -4,44 +4,57 @@
 
 {% for msg in get_flashed_messages() %}
 <div class="alert alert-warning alert-dismissible show" role="alert">
-    {{msg}}
+    {{ msg }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endfor %}
-<h1>Update Molecule...</h1>
+
+<h1>Update Molecule</h1>
 <br /><br />
+
 <div class="shadow p-3 mb-5 bg-body rounded">
-
-    <form action="/molecule/update/{{mol_to_update.id}}" method="POST" enctype="multipart/form-data">
+    <form action="{{ url_for('update_mol', id=mol_to_update.id) }}" method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
-    
-        {{ form.name.label(class="form-label") }}
-        {{ form.name(class="form-control", value=mol_to_update.name) }}
-    
-        <br />
-        {{ form.concentration.label(class="form-label") }}
-        {{ form.concentration(class="form-control", value=mol_to_update.concentration) }}
-    
-        <br />
-        {{ form.composition.label(class="form-label") }}  <!-- Added composition field -->
-        {{ form.composition(class="form-control", value=mol_to_update.composition) }}  <!-- Added composition field -->
-    
-        <br />
-        {{ form.publication.label(class="form-label") }}
-        {{ form.publication(class="form-control", rows='5', data=mol_to_update.publication) }}
-        <br />
-        <div class="btn-group" role="group" aria-label="Basic mixed styles example">
 
-            {{form.submit(
-            class="btn btn-primary"
-            )}}
-
-            <a href="{{url_for('delete_mol', id = mol_to_update.id)}}" class="btn btn-warning">Delete </a>
-            <a href="{{url_for('dashboard')}}" class="btn btn-secondary">Return </a>
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
         </div>
+
+        <div class="mb-3">
+            {{ form.concentration.label(class="form-label") }}
+            {{ form.concentration(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.composition.label(class="form-label") }}
+            {{ form.composition(class="form-control") }}
+        </div>
+       
+
+        
+
+        <div class="mb-3">
+            <label for="twod_struc" class="form-label">2D Structure</label>
+            <input type="file" name="twod_struc" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label for="threed_struc" class="form-label">3D Structure</label>
+            <input type="file" name="threed_struc" class="form-control">
+        </div>
+        
+        <div class="mb-3">
+            {{ form.public.label(class="form-label") }}
+            {{ form.public(class="form-check-input") }}
+        </div>
+        <div class="btn-group" role="group">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('delete_mol', id=mol_to_update.id) }}" class="btn btn-warning">Delete</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Return</a>
+        </div>
+        
     </form>
 </div>
-
-
 
 {% endblock content %}

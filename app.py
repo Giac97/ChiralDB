@@ -26,7 +26,7 @@ import uuid as uuid
 import csv
 import io
 from sqlalchemy import or_
-from utilities.publication import get_metadata_from_doi, get_bibtex_from_doi
+from utilities.publication import get_metadata_from_doi, get_bibtex_from_doi, get_metadata, get_bibtex
 from utilities.units import *
 import json
 from chiraldb.user import user
@@ -34,7 +34,7 @@ from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from flask import abort
 import secrets
-
+import logging
 
 #Flask instance created below
 app = Flask(__name__)
@@ -94,6 +94,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 
+logging.basicConfig(filename='error.log', level=logging.ERROR, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 def send_confirmation_email(user):
     """
     Sends a confirmation email to the user with a secure token link.
@@ -140,7 +142,16 @@ def login():
 
     return render_template("login.html", form=form)
 
+@app.errorhandler(500)
+def internal_error(error):
+    app.logger.error(f"Server Error: {error}")
+    return render_template("500.html"), 500
 
+
+@app.errorhandler(400)
+def bad_request(error):
+    app.logger.error(f"400 Bad Request: {error}")
+    return render_template("400.html"), 400
 #dashboard page
 @app.route("/dashboard/", methods = ['GET', 'POST'])
 @login_required
@@ -376,32 +387,37 @@ def delete(id):
                         our_users = our_users)
 
 #new post 
-@app.route("/add-post/", methods = ['GET', 'POST'])
+@app.route("/add-post/", methods=['GET', 'POST'])
 @login_required
 def add_post():
     form = PostForm()
-    
+
+    # Get molecule_id from URL if provided
+    molecule_id = request.args.get("molecule_id", type=int)
+
+    # Filter user's molecules
     form.molecule_id.choices = [(m.id, m.name) for m in Molecule.query.filter_by(poster_id=current_user.id).all()]
+    
+    # Preselect molecule if molecule_id is provided and valid
+    if molecule_id and any(m_id == molecule_id for m_id, _ in form.molecule_id.choices):
+        form.molecule_id.data = molecule_id
+
     if form.validate_on_submit():
-        poster = current_user.id
         post = Posts(
-            title = form.title.data,
-            content = form.content.data,
-            poster_id = poster,
-            slug = form.slug.data,
-            molecule_id = form.molecule_id.data
+            title=form.title.data,
+            content=form.content.data,
+            poster_id=current_user.id,
+            slug=form.slug.data,
+            molecule_id=form.molecule_id.data
         )
-        form.title.data = ''
-        form.content.data = ''
-        form.slug.data = ''
         
-        #add to db
         db.session.add(post)
         db.session.commit()
         
-        flash("Post submitted successfully!")
-        
-    return render_template("add_post.html", form = form)
+        flash("Post submitted successfully!", "success")
+        return redirect(url_for("dashboard"))  # Change to appropriate redirect
+
+    return render_template("add_post.html", form=form)
 
 @app.route("/date/")
 def get_current_date():
@@ -484,7 +500,7 @@ def add_molecule():
         poster = current_user.id
         file = form.raw_data.data
         twod_file = form.twod_struc.data
-        
+        threed_file = form.threed_struc.data
         # Handle PubChem ID if provided
         cid = form.pubchem_id.data
         try:
@@ -529,13 +545,23 @@ def add_molecule():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             twod_file.save(file_path)  # Save the uploaded file
             twod_filename = file_path
-            
+        threed_filename = None
+        if threed_file:
+            filename = secure_filename(threed_file.filename)
+            unique_filename = str(uuid.uuid1()) + "_" + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            threed_file.save(file_path)  # Save the uploaded file
+            threed_filename = file_path 
+
+        #get visibility data
+        visible = form.public.data 
         # Initialize the molecule object
         molecule = Molecule(
             name=form.name.data,
             composition=form.composition.data,
             pubchem_id=cid if cid else None,  # Store PubChem ID
             two_d_struc=twod_filename,
+            three_d_struc = threed_filename,
             molecular_weight=molecular_weight,
             iupac_name=iupac_name,
             concentration = form.concentration.data,
@@ -552,6 +578,7 @@ def add_molecule():
             chir_pol_re = [],
             achir_pol_im = [],
             achir_pol_re = [],
+            public=visible
         )
         C = float(form.concentration.data)
         L = 1.0
@@ -624,158 +651,195 @@ def add_molecule():
 
 @app.route("/molecule/<int:id>/", methods=['GET', 'POST'])
 def molecule(id):
+    
     molecule = Molecule.query.get_or_404(id)
-    
-    # Initialize the CSV export form
-    form = CSVExportForm()
-    L = 1.0
-    # Prepare data for Plotly
-    wvl = molecule.wavelength
-    abs_data = molecule.absortion
-    ecd_data = molecule.ecd
-    #abs_re_data = molecule.absortion_re
-    #ecd_re_data = molecule.ecd_re
-    
-    ecd_abs = np.array(ecd_data)
-    abs_arr = np.array(abs_data)
-    #abs_re_arr = np.array(abs_re_data)
-    g_fac = np.zeros(len(ecd_abs))
-    min_abs = np.max(abs_arr)/1000.0
-    for i in range(len(ecd_abs)):
-        if abs_arr[i] > min_abs:
-            g_fac[i] = ecd_abs[i] / abs_arr[i]
-        else:
-            g_fac[i] = 0
-    C = molecule.concentration
-    M = molecule.molecular_weight
+    if molecule.public == False and not current_user.is_authenticated:
+        return render_template("404.html")
+    if molecule.public == True or (current_user.id == molecule.poster.id or any(role.name == 'Admin' for role in current_user.roles)):
 
-    #ecd_mdeg = ext_to_mdeg(ecd_abs, M, C, L)
-    
-    #polar = polarisability(wvl, ext_to_abs(abs_arr, M=M, C=C, L=L), ecd_mdeg , C * 1000 / M, L, 1.0)
-    
-
-    #im_alphac = np.imag(polar[1])
-    #re_alphac = np.real(polar[1])
-
-    im_alphac = molecule.chir_pol_im
-    re_alphac = molecule.chir_pol_re
-    #im_alphaa = np.imag(polar[0])
-    #re_alphaa = np.real(polar[0])
-    im_alphaa = molecule.achir_pol_im
-    re_alphaa = molecule.achir_pol_re
-
-    id_max_g = np.argmax(np.abs(g_fac))
-    max_g = g_fac[id_max_g]
-    wvl_maxg = wvl[id_max_g]
-    abs_complex = hilbert(abs_arr)
-    abs_real = -abs_complex.imag
-    
-    ecd_complex = hilbert(ecd_abs)
-    ecd_real = -ecd_complex.imag
-    # Create Plotly graph data for Absorption, ECD, and g-factor (as you already have)
-    absorption_trace = go.Scatter(x=wvl, y=abs_data, mode='lines', name='Absorption', line=dict(color='blue'))
-    absorption_trace_re = go.Scatter(x = wvl, y = abs_real, mode = 'lines', name = 'Re(Absorption)', line = dict(color='green'))
-    #absorption_trace_re = go.Scatter(x=wvl, y=abs_re_arr, mode='lines', name='Absorption', line=dict(color='red'))
-    absorption_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Absorption [ext]'), hovermode='closest', autosize=True)
-
-    ecd_trace = go.Scatter(x=wvl, y=ecd_data, mode='lines', name='ECD', line=dict(color='orange'))
-    ecd_trace_re = go.Scatter(x = wvl, y = ecd_real, mode = 'lines', name = 'Re(ECD)', line = dict(color='green'))
-    
-    im_alpha_c_trace = go.Scatter(x = wvl, y = im_alphac, mode = 'lines', name = 'Im(Alpha_c)', line = dict(color='magenta'))
-    re_alpha_c_trace = go.Scatter(x = wvl, y = re_alphac, mode = 'lines', name = 'Re(Alpha_c)', line = dict(color='green'))
-
-    im_alpha_a_trace = go.Scatter(x = wvl, y = im_alphaa, mode = 'lines', name = 'Im(Alpha_a)', line = dict(color='magenta'))
-    re_alpha_a_trace = go.Scatter(x = wvl, y = re_alphaa, mode = 'lines', name = 'Re(Alpha_a)', line = dict(color='green'))
-
-    alpha_c_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
-    alpha_a_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Achiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
-
-    ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='yellow'))
-    ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
-
-    g_fac_trace = go.Scatter(x=wvl, y=g_fac, mode='lines', name='g factor', line=dict(color='orange'))
-    g_fac_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='g factor'), hovermode='closest', autosize=True)
-
-    ecd_figure = go.Figure(data=[ecd_trace, ecd_trace_mirr, ecd_trace_re], layout=ecd_layout)
-    absorption_figure = go.Figure(data=[absorption_trace,absorption_trace_re], layout=absorption_layout)
-    g_fac_figure = go.Figure(data=[g_fac_trace], layout=g_fac_layout)
-    alpha_c_figure = go.Figure(data=[im_alpha_c_trace, re_alpha_c_trace], layout=alpha_c_layout)
-    alpha_a_figure = go.Figure(data=[im_alpha_a_trace, re_alpha_a_trace], layout=alpha_a_layout)
- 
-    absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-    ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-    gfac_plot_div = g_fac_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-    alpha_c_plot_div = alpha_c_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-    alpha_a_plot_div = alpha_a_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-    if (molecule.publication):
-        publications = molecule.publication
-        publications = publications.split(",")
-        publications_metadata = [get_metadata_from_doi(doi.strip()) for doi in publications]
-        print(publications_metadata)
-        context = {"publications": publications,
-                   "pub_metadata": publications_metadata}
-    else:
-        context = {"publications": "na",
-                   "pub_metadata": "na"}
-    # Handle CSV export form submission
-    if form.validate_on_submit():
-        # Create an in-memory CSV
-        csv_data = StringIO()
-        writer = csv.writer(csv_data)
+        # Initialize the CSV export form
+        form = CSVExportForm()
+        L = 1.0
+        # Prepare data for Plotly
+        wvl = molecule.wavelength
+        abs_data = molecule.absortion
+        ecd_data = molecule.ecd
+        #abs_re_data = molecule.absortion_re
+        #ecd_re_data = molecule.ecd_re
         
-        # Write header
-        header = ['Wavelength (nm)']
-        if form.absorption.data:
-            header.append('Absorption')
-        if form.ecd.data:
-            header.append('ECD')
-        if form.gfactor.data:
-            header.append('g Factor')
-        if form.abs_re.data:
-            header.append('Absorption (Re)')
-        if form.alpha_a.data:
-            header.append('Achiral Pol (Im)')
-        if form.alpha_c.data:
-            header.append('Chiral Pol (Im)')
+        ecd_abs = np.array(ecd_data)
+        abs_arr = np.array(abs_data)
+        #abs_re_arr = np.array(abs_re_data)
+        g_fac = np.zeros(len(ecd_abs))
+        min_abs = np.max(abs_arr)/1000.0
+        for i in range(len(ecd_abs)):
+            if abs_arr[i] > min_abs:
+                g_fac[i] = ecd_abs[i] / abs_arr[i]
+            else:
+                g_fac[i] = 0
+        C = molecule.concentration
+        M = molecule.molecular_weight
 
-        writer.writerow(header)
-        s = 0
-        # Write data rows based on user selection
-        for i in range(len(wvl)):
-            row = [wvl[i]]
+        #ecd_mdeg = ext_to_mdeg(ecd_abs, M, C, L)
+        
+        #polar = polarisability(wvl, ext_to_abs(abs_arr, M=M, C=C, L=L), ecd_mdeg , C * 1000 / M, L, 1.0)
+        
+
+        #im_alphac = np.imag(polar[1])
+        #re_alphac = np.real(polar[1])
+
+        im_alphac = molecule.chir_pol_im
+        re_alphac = molecule.chir_pol_re
+        #im_alphaa = np.imag(polar[0])
+        #re_alphaa = np.real(polar[0])
+        im_alphaa = molecule.achir_pol_im
+        re_alphaa = molecule.achir_pol_re
+
+        id_max_g = np.argmax(np.abs(g_fac))
+        max_g = g_fac[id_max_g]
+        wvl_maxg = wvl[id_max_g]
+        
+
+        pad_width = len(ecd_abs) // 2
+        padded_ecd_abs = np.pad(ecd_abs, pad_width, mode='reflect')
+        padded_abs_arr = np.pad(abs_arr, pad_width, mode='reflect')
+        ecd_complex = 1j * hilbert(padded_ecd_abs)[pad_width:-pad_width] 
+        abs_complex = 1j * hilbert(padded_abs_arr)[pad_width:-pad_width] 
+
+
+        ecd_real = ecd_complex.real
+        abs_real = abs_complex.real
+        # Create Plotly graph data for Absorption, ECD, and g-factor (as you already have)
+        absorption_trace = go.Scatter(x=wvl, y=abs_data, mode='lines', name='Absorption', line=dict(color='blue'))
+        absorption_trace_re = go.Scatter(x = wvl, y = abs_real, mode = 'lines', name = 'Re(Absorption)', line = dict(color='green'))
+        #absorption_trace_re = go.Scatter(x=wvl, y=abs_re_arr, mode='lines', name='Absorption', line=dict(color='red'))
+        absorption_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Absorption [ext]'), hovermode='closest', autosize=True)
+
+        ecd_trace = go.Scatter(x=wvl, y=ecd_data, mode='lines', name='ECD', line=dict(color='orange'))
+        ecd_trace_re = go.Scatter(x = wvl, y = ecd_real, mode = 'lines', name = 'Re(ECD)', line = dict(color='green'))
+        
+        im_alpha_c_trace = go.Scatter(x = wvl, y = im_alphac, mode = 'lines', name = 'Im(Alpha_c)', line = dict(color='magenta'))
+        re_alpha_c_trace = go.Scatter(x = wvl, y = re_alphac, mode = 'lines', name = 'Re(Alpha_c)', line = dict(color='green'))
+
+        im_alpha_a_trace = go.Scatter(x = wvl, y = im_alphaa, mode = 'lines', name = 'Im(Alpha_a)', line = dict(color='magenta'))
+        re_alpha_a_trace = go.Scatter(x = wvl, y = re_alphaa, mode = 'lines', name = 'Re(Alpha_a)', line = dict(color='green'))
+
+        alpha_c_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
+        alpha_a_layout = go.Layout(xaxis = dict(title='Wavelength [nm]'), yaxis=dict(title='Achiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
+
+        ecd_trace_mirr = go.Scatter(x=wvl, y=-1 * np.array(ecd_data), mode='lines', name='ECD [reflected]', line=dict(color='yellow'))
+        ecd_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='ECD [ext]'), hovermode='closest', autosize=True)
+
+        g_fac_trace = go.Scatter(x=wvl, y=g_fac, mode='lines', name='g factor', line=dict(color='orange'))
+        g_fac_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='g factor'), hovermode='closest', autosize=True)
+
+        ecd_figure = go.Figure(data=[ecd_trace, ecd_trace_mirr, ecd_trace_re], layout=ecd_layout)
+        absorption_figure = go.Figure(data=[absorption_trace,absorption_trace_re], layout=absorption_layout)
+        g_fac_figure = go.Figure(data=[g_fac_trace], layout=g_fac_layout)
+        alpha_c_figure = go.Figure(data=[im_alpha_c_trace, re_alpha_c_trace], layout=alpha_c_layout)
+        alpha_a_figure = go.Figure(data=[im_alpha_a_trace, re_alpha_a_trace], layout=alpha_a_layout)
+    
+        absorption_plot_div = absorption_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+        ecd_plot_div = ecd_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+        gfac_plot_div = g_fac_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+        alpha_c_plot_div = alpha_c_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+        alpha_a_plot_div = alpha_a_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
+        # Replace the existing publication metadata section with this code:
+        if hasattr(molecule, 'publication') and molecule.publication:
+            publications = molecule.publication.split(",")
+            publications = [pub.strip() for pub in publications if pub.strip()]
+            
+            # Get metadata and BibTeX for each publication using the universal function
+            pub_metadata = []
+            bibtex_entries = []
+            
+            for pub_url in publications:
+                # Get metadata using the universal function that handles both DOI and arXiv
+                metadata = get_metadata(pub_url)
+                pub_metadata.append(metadata)
+                
+                # Get BibTeX citation
+                bibtex = get_bibtex(pub_url)
+                if bibtex:
+                    bibtex_entries.append(bibtex)
+            
+            # Create context dictionary with all information
+            context = {
+                "publications": publications,
+                "pub_metadata": pub_metadata,
+                "bibtex_entries": bibtex_entries,
+                "pub_count": len(publications)
+            }
+        else:
+            context = {
+                "publications": [],
+                "pub_metadata": [],
+                "bibtex_entries": [],
+                "pub_count": 0
+            }
+        # Handle CSV export form submission
+        if form.validate_on_submit():
+            # Create an in-memory CSV
+            csv_data = StringIO()
+            writer = csv.writer(csv_data)
+            
+            # Write header
+            header = ['Wavelength (nm)']
             if form.absorption.data:
-                row.append(abs_data[i])
+                header.append('Absorption')
             if form.ecd.data:
-                row.append(ecd_data[i])
+                header.append('ECD')
             if form.gfactor.data:
-                row.append(g_fac[i])
+                header.append('g Factor')
+            if form.abs_re.data:
+                header.append('Absorption (Re)')
             if form.alpha_a.data:
-                row.append(im_alphaa[i])
+                header.append('Achiral Pol (Im)')
             if form.alpha_c.data:
-                row.append(im_alphac[i])
+                header.append('Chiral Pol (Im)')
 
-            writer.writerow(row)
+            writer.writerow(header)
+            s = 0
+            # Write data rows based on user selection
+            for i in range(len(wvl)):
+                row = [wvl[i]]
+                if form.absorption.data:
+                    row.append(abs_data[i])
+                if form.ecd.data:
+                    row.append(ecd_data[i])
+                if form.gfactor.data:
+                    row.append(g_fac[i])
+                if form.alpha_a.data:
+                    row.append(im_alphaa[i])
+                if form.alpha_c.data:
+                    row.append(im_alphac[i])
 
-        # Create a downloadable CSV response
-        response = make_response(csv_data.getvalue())
-        response.headers['Content-Disposition'] = 'attachment; filename=molecule_data.csv'
-        response.headers['Content-type'] = 'text/csv'
-        return response
+                writer.writerow(row)
 
-    return render_template(
-    "molecule.html",
-    molecule=molecule,
-    absorption_plot_div=absorption_plot_div,
-    ecd_plot_div=ecd_plot_div,
-    gfac_plot_div=gfac_plot_div,
-    alpha_c_plot_div=alpha_c_plot_div,
-    alpha_a_plot_div=alpha_a_plot_div,
-    max_g=max_g,
-    wvl_maxg=wvl_maxg,
-    form=form,
-    MeasurementType=MeasurementType,
-    **context  # Unpack context dictionary
-)
+            # Create a downloadable CSV response
+            response = make_response(csv_data.getvalue())
+            response.headers['Content-Disposition'] = 'attachment; filename=molecule_data.csv'
+            response.headers['Content-type'] = 'text/csv'
+            return response
+
+        return render_template(
+        "molecule.html",
+        molecule=molecule,
+        absorption_plot_div=absorption_plot_div,
+        ecd_plot_div=ecd_plot_div,
+        gfac_plot_div=gfac_plot_div,
+        alpha_c_plot_div=alpha_c_plot_div,
+        alpha_a_plot_div=alpha_a_plot_div,
+        max_g=max_g,
+        wvl_maxg=wvl_maxg,
+        form=form,
+        MeasurementType=MeasurementType,
+        **context  # Unpack context dictionary
+    )
+    else:
+        return render_template(
+            "404.html"
+        )
 
 
 
@@ -813,8 +877,29 @@ def download_csv(id):
 
 @app.route("/molecule/all_molecules/")
 def all_molecules():
-    molecules = Molecule.query.order_by(Molecule.id).all()  # Use .all() to retrieve results
-    return render_template("molecules.html", molecules=molecules, MeasurementType = MeasurementType)
+    #molecules = Molecule.query.order_by(Molecule.tool).all()  # Use .all() to retrieve results
+    #return render_template("molecules.html", molecules=molecules, MeasurementType = MeasurementType)
+    page = request.args.get('page', 1, type=int)  # Get page number from query params
+    per_page = request.args.get('per_page', 6, type=int)  # Get per-page count, default to 6
+
+    # If "all" is selected, return all molecules without pagination
+    if per_page == 0:
+        molecules_list = Molecule.query.all()
+        pagination = None
+    else:
+        pagination = Molecule.query.paginate(page=page, per_page=per_page, error_out=False)
+        molecules_list = pagination.items
+
+    return render_template(
+        'molecules.html',
+        molecules=molecules_list,
+        pagination=pagination,
+        per_page=per_page,
+        MeasurementType = MeasurementType
+    )
+    
+    return render_template('molecules.html', molecules=molecules_pagination.items, pagination=molecules_pagination, MeasurementType = MeasurementType)
+
 
 @app.route("/molecule/delete/<int:id>")
 def delete_mol(id):
@@ -841,40 +926,59 @@ def delete_mol(id):
     else:
         return render_template("not_allowed.html", what = "molecule")
 
-@app.route('/molecule/update/<int:id>', methods = ['GET', 'POST'])
+@app.route('/molecule/update/<int:id>', methods=['GET', 'POST'])
 @login_required
 def update_mol(id):
-    form = MoleculeForm()
     mol_to_update = Molecule.query.get_or_404(id)
-    try:
-        id = current_user.id
-    except AttributeError:
-        return render_template("not_allowed.html", what = "not_logged")
-    if id == mol_to_update.poster.id:
-        if request.method == "POST":
-            mol_to_update.name = request.form['name']
-            mol_to_update.composition = request.form['composition']
-            mol_to_update.publication = request.form['publication']
-            mol_to_update.concentration = request.form['concentration']
-            
-            try:
-                db.session.commit()
-                flash("Molecule updated successfully")
-                return render_template("update_mol.html",
-                                       form = form,
-                                       mol_to_update = mol_to_update)
-            except:
-                flash("Error! Try again!")
-                return render_template("update_mol.html",
-                                       form = form,
-                                       mol_to_update = mol_to_update)
-        else:
-            return render_template("update_mol.html",
-                                   form = form,
-                                   mol_to_update = mol_to_update,
-                                   id = id)
-    else:
+    
+    if current_user.id != mol_to_update.poster.id and not any(role.name == 'Admin' for role in current_user.roles):
+        print("Access denied!")  # Debugging
         return render_template("not_allowed.html", what="molecule")
+
+    form = MoleculeForm(obj=mol_to_update)  # Pre-populate form
+
+
+
+    if request.method == "POST":
+        mol_to_update.name = form.name.data
+        mol_to_update.composition = form.composition.data
+        mol_to_update.publication = form.publication.data
+        mol_to_update.concentration = form.concentration.data
+        mol_to_update.public = form.public.data
+
+        twod_file = request.files.get('twod_struc')
+        threed_file = request.files.get('threed_struc')
+
+        if twod_file and twod_file.filename:
+            filename = secure_filename(twod_file.filename)
+            unique_filename = str(uuid.uuid1()) + "_" + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            twod_file.save(file_path)
+            mol_to_update.two_d_struc = file_path
+
+        if threed_file and threed_file.filename:
+            filename = secure_filename(threed_file.filename)
+            unique_filename = str(uuid.uuid1()) + "_" + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            threed_file.save(file_path)
+            mol_to_update.three_d_struc = file_path
+
+        try:
+            db.session.commit()
+            flash("Molecule updated successfully", "success")
+            print("Database commit successful!")  # Debugging
+            return redirect(url_for('molecule', id=id))
+        except:
+            flash("Error! Try again!", "danger")
+            print("Database commit failed!")  # Debugging
+
+    else:
+        print("Form validation failed:", form.errors)  # Debugging
+
+    return render_template("update_mol.html", form=form, mol_to_update=mol_to_update)
+
+
+
 #pass stuff to navbar
 @app.context_processor
 def base():
@@ -884,31 +988,49 @@ def base():
 
 
 # search
-@app.route("/search/", methods = ["POST"])
+
+@app.route("/search/", methods=["GET", "POST"])
 def search():
     form = SearchForm()
     posts = Posts.query
     molecules = Molecule.query
-    if form.validate_on_submit():
-        
-        post.searched = form.searched.data
-        molecule.searched = form.searched.data
+    searched = request.args.get("searched", "")
 
-        #query db
-        posts = posts.filter(Posts.content.ilike('%' + post.searched +'%'))
-        posts = posts.order_by(Posts.title).all()
-        
+    if form.validate_on_submit():
+        searched = form.searched.data  # Get search term from form
+
+    if searched:
+        posts = posts.filter(Posts.content.ilike(f"%{searched}%")).order_by(Posts.title).all()
         molecules = molecules.filter(
-            or_(Molecule.name.ilike('%' + molecule.searched +'%'),
-                Molecule.composition.ilike('%' + molecule.searched + '%'),
-                )
+            or_(
+                Molecule.name.ilike(f"%{searched}%"),
+                Molecule.composition.ilike(f"%{searched}%")
+            )
         )
-        molecules = molecules.order_by(Molecule.name).all()
-        return render_template("search.html", 
-                               form = form,
-                               searched = post.searched,
-                               posts = posts,
-                               molecules = molecules)
+    else:
+        posts = []
+        molecules = Molecule.query  # If no search term, return all molecules
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 6, type=int)
+
+    if per_page == 0:
+        molecules_list = molecules.all()
+        pagination = None
+    else:
+        pagination = molecules.paginate(page=page, per_page=per_page, error_out=False)
+        molecules_list = pagination.items
+
+    return render_template(
+        "search.html",
+        form=form,
+        searched=searched,
+        posts=posts,
+        molecules=molecules_list,
+        pagination=pagination,
+        per_page=per_page,
+        MeasurementType=MeasurementType
+    )
 
 @app.route("/compare/<int:id1>-<int:id2>")
 def compare_mols(id1, id2):
@@ -936,13 +1058,13 @@ def compare_mols(id1, id2):
     
     chir_pol1_trace = go.Scatter(x=wvl[0], y=chirpol_data[0], mode='lines', name='Chiral Polarizability {}'.format(mol_1.name), line=dict(color='blue'))
     chir_pol2_trace = go.Scatter(x=wvl[1], y=chirpol_data[1], mode='lines', name='Chiral Polarizability {}'.format(mol_2.name), line=dict(color='red'))
-    chir_pol_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability'), hovermode='closest', autosize=True)
+    chir_pol_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Chiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
     chir_pol_figure = go.Figure(data=[chir_pol1_trace,chir_pol2_trace ], layout=chir_pol_layout)
     chir_pol_div = chir_pol_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     
     achir_pol1_trace = go.Scatter(x=wvl[0], y=achirpol_data[0], mode='lines', name='Achiral Polarizability {}'.format(mol_1.name), line=dict(color='blue'))
     achir_pol2_trace = go.Scatter(x=wvl[1], y=achirpol_data[1], mode='lines', name='Achiral Polarizability {}'.format(mol_2.name), line=dict(color='red'))
-    achir_pol_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Achiral Polarizability'), hovermode='closest', autosize=True)
+    achir_pol_layout = go.Layout(xaxis=dict(title='Wavelength [nm]'), yaxis=dict(title='Achiral Polarizability [nm^3]'), hovermode='closest', autosize=True)
     achir_pol_figure = go.Figure(data=[achir_pol1_trace,achir_pol2_trace ], layout=achir_pol_layout)
     achir_pol_div = achir_pol_figure.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
     
@@ -1108,7 +1230,7 @@ def compare_multiple_mols():
         else:
             method = "Computational"
         # Absorption trace
-        color = "blue" if method == "Experimental" else "green"
+        color = "green" if method == "Experimental" else "blue"
         absorption_traces.append(
             go.Scatter(
                 x=mol.wavelength, 
@@ -1198,7 +1320,7 @@ def compare_multiple_mols():
         data=chir_pol_traces, 
         layout=go.Layout(
             xaxis=dict(title='Wavelength [nm]'), 
-            yaxis=dict(title='Chiral Polarizability'), 
+            yaxis=dict(title='Chiral Polarizability [nm^3]'), 
             hovermode='closest', 
             autosize=True
         )
@@ -1208,7 +1330,7 @@ def compare_multiple_mols():
         data=achir_pol_traces, 
         layout=go.Layout(
             xaxis=dict(title='Wavelength [nm]'), 
-            yaxis=dict(title='Achiral Polarizability'), 
+            yaxis=dict(title='Achiral Polarizability [nm^3]'), 
             hovermode='closest', 
             autosize=True
         )
@@ -1389,7 +1511,8 @@ def advanced_search():
 
         return render_template("search.html", 
                                form = form,
-                               molecules = molecules)
+                               molecules = molecules,
+                               MeasurementType = MeasurementType)
 
     return render_template('advanced_search.html', form=form)
 
@@ -1405,7 +1528,7 @@ def download_bibtex(id):
     for doi in publications:
         doi = doi.strip()
         if doi:
-            bibtex = get_bibtex_from_doi(doi)
+            bibtex = get_bibtex(doi)
             if bibtex:
                 bibtex_entries.append(bibtex)
             else:
@@ -1558,6 +1681,7 @@ class Molecule(db.Model):
     iupac_name = db.Column(db.String(150), nullable = True)
     
     two_d_struc = db.Column(db.String(), nullable = True)
+    three_d_struc = db.Column(db.String(), nullable = True)
     
     # Using postgresql.ENUM to define the enum type explicitly in PostgreSQL
     tool = db.Column(
@@ -1576,8 +1700,12 @@ class Molecule(db.Model):
     achir_pol_im = db.Column(ARRAY(db.FLOAT))  
     achir_pol_re = db.Column(ARRAY(db.FLOAT))  
     
+    #public for visibility
+    public = db.Column(db.Boolean, nullable = True, default = True)
     #relatiosnhip to post
     posts = db.relationship('Posts', backref="molecule", lazy = True)
+
+
     
 class ResearchGroup(db.Model):
     __tablename__ = 'researchgroup'

@@ -28,6 +28,10 @@
         {{ form.twod_struc(class="form-control") }}
     
         <br />
+        {{ form.threed_struc.label(class="form-label") }}
+        {{ form.threed_struc(class="form-control") }}
+    
+        <br />
         {{ form.pubchem_id.label(class="form-label") }}
         {{ form.pubchem_id(class="form-control", placeholder="12345") }}
         <br />
@@ -64,7 +68,10 @@
         {{ form.ecd_units.label(class="form-label") }}
         {{ form.ecd_units(class="form-control") }}
         <br />
-        
+        {{ form.public.label(class="form-label") }}
+        {{ form.public(class="form-check-input") }}
+        <br />
+
         {{ form.submit(class="btn btn-secondary") }}
     </form>
     

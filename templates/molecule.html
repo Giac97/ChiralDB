@@ -1,82 +1,125 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    {% for msg in get_flashed_messages() %}
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        {{ msg }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
+{% for msg in get_flashed_messages() %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    {{ msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card shadow-lg h-100"
+            style="border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #f35d1f 0%, #ddaa16 100%);">
+            <div class="card-body text-white p-4">
+                <h5 class="card-title display-6" style="font-weight: bold;">
+                    {{ molecule.name }}
+                </h5>
+                <hr class="bg-light" />
+                {% if molecule.iupac_name %}
+                <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> {{ molecule.iupac_name | title }}
+                </h6>
+                {% else %}
+                <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> Not Given</h6>
+                {% endif %}
 
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card shadow-lg h-100" style="border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #f35d1f 0%, #ddaa16 100%);">
-                <div class="card-body text-white p-4">
-                    <h5 class="card-title display-6" style="font-weight: bold;">
-                        {{ molecule.name }}
-                    </h5>
-                    <hr class="bg-light" />
-                    {% if molecule.iupac_name %}
-                    <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> {{ molecule.iupac_name | title }}</h6>
+                <p class="card-text">
+                    <i class="bi bi-bar-chart-fill"></i> <strong>Molecular Weight:</strong> {{ molecule.molecular_weight
+                    }} g/mol <br />
+                    <i class="bi bi-droplet-fill"></i> <strong>Concentration:</strong> {{ molecule.concentration }} g/L
+                    <br />
+                    <i class="bi bi-layers-fill"></i> <strong>Composition:</strong> {{ molecule.composition }} <br />
+                    <i class="bi bi-person-fill"></i> <strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{
+                    molecule.poster.first_name }} <br />
+                    {% if molecule.tool == MeasurementType.experimental %}
+                    <img src="{{url_for('static', filename='images/test-tube.svg')}}" alt="Test Tube" width="16"
+                        height="16" style="filter: invert(100%) brightness(100%);">
+                    <strong>Method:</strong> Experimental
                     {% else %}
-                    <h6 class="card-subtitle mb-3 text-light"><strong>IUPAC Name:</strong> Not Given</h6>
+                    <i class="bi bi-cpu-fill"></i> <strong>Method:</strong> Computational
                     {% endif %}
+                    <br />
+                    <i class="bi bi-people-fill"></i> <strong>Group:</strong> {{ molecule.poster.affiliation }} <br />
+                    <i class="bi bi-graph-up-arrow"></i> <strong>Max g-factor:</strong> {{ max_g | round(5) }} ({{
+                    wvl_maxg }} nm)
+                    <br />
 
-                    <p class="card-text">
-                        <i class="bi bi-bar-chart-fill"></i> <strong>Molecular Weight:</strong> {{ molecule.molecular_weight }} g/mol <br />
-                        <i class="bi bi-droplet-fill"></i> <strong>Concentration:</strong> {{ molecule.concentration }} g/L <br />
-                        <i class="bi bi-layers-fill"></i> <strong>Composition:</strong> {{ molecule.composition }} <br />
-                        <i class="bi bi-person-fill"></i> <strong>Uploaded by:</strong> {{ molecule.poster.last_name }} {{ molecule.poster.first_name }} <br />
-                        {% if molecule.tool == MeasurementType.experimental %}
-                        <img src="{{url_for('static', filename='images/test-tube.svg')}}" alt="Test Tube" width="16" height="16" style="filter: invert(100%) brightness(100%);">
-                        <strong>Method:</strong> Experimental
-                        {% else %}
-                        <i class="bi bi-cpu-fill"></i> <strong>Method:</strong> Computational
-                        {% endif %}
-                        <br />
-                        <i class="bi bi-people-fill"></i> <strong>Group:</strong> {{ molecule.poster.affiliation }} <br />
-                        <i class="bi bi-graph-up-arrow"></i> <strong>Max g-factor:</strong> {{ max_g | round(5) }} ({{ wvl_maxg }} nm)
-                        <br />
-
-                    </p>
-                </div>
+                </p>
             </div>
         </div>
+    </div>
 
-        <div class="col-md-6">
-            <div class="card shadow-lg h-100" style="border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #ddaa16 0%, #f35d1f 100%);">
-                <div class="card-body">
-                    <h5 class="card-subtitle" style="padding-bottom: 10pt;">Uploaded Data</h5>
-                    <!-- View 3D Structure -->
-                    <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-                        <i class="bi bi-badge-3d"></i> View 3D Structure
-                    </a>
-                    <div class="collapse" id="collapseExample">
-                        <div class="card card-body">
-                            <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
-                            {% if molecule.iupac_name %}
-                            <div id="container-01" class="mol-container" data-cid="{{ molecule.pubchem_id }}"></div>
-                            {% else %}
-                            <div id="container-01" class="mol-container"></div>
-                            <script>
-                                const element1 = document.querySelector('#container-01');
-                                const config1 = { backgroundColor: 'white' };
-                                const viewer1 = $3Dmol.createViewer(element1, config1);
-                                viewer1.addLabel("Structure Not Available", {
-                                    position: { x: -5, y: 0, z: 0 },
-                                    fontSize: 20,
-                                    fontColor: 'red',
-                                    backgroundOpacity: 0.5,
-                                    backgroundColor: 'blue'
+    <div class="col-md-6">
+        <div class="card shadow-lg h-100"
+            style="border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #ddaa16 0%, #f35d1f 100%);">
+            <div class="card-body">
+                <h5 class="card-subtitle" style="padding-bottom: 10pt;">Uploaded Data</h5>
+                <!-- View 3D Structure -->
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#collapseExample" role="button"
+                    aria-expanded="false" aria-controls="collapseExample">
+                    <i class="bi bi-badge-3d"></i> View 3D Structure
+                </a>
+                <div class="collapse" id="collapseExample">
+                    <div class="card card-body">
+                        <!-- Carica la libreria 3Dmol -->
+                        <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+                        {% if molecule.three_d_struc %}
+                        <div id="container-02" class="mol-container"></div>
+                        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+                        <script>
+                            $(document).ready(function () {
+                                let element = document.getElementById("container-02");
+                                let config = { backgroundColor: 'white' };
+                                let viewer = $3Dmol.createViewer(element, config);
+
+
+
+                                let pdbUri = "{{ url_for('static', filename=molecule.three_d_struc.lstrip('static/')) }}";
+                                let fileExt = pdbUri.split('.').pop();
+
+                                // Carica il file
+                                $.ajax({
+                                    url: pdbUri,
+                                    success: function (data) {
+                                        viewer.addModel(data, fileExt); // o "pdb" se il formato è PDB
+                                        viewer.setStyle({}, {
+                                            sphere: { color: 'spectrum', scale: 0.3 },
+                                            stick: { color: 'spectrum', scale: 0.1 }
+                                        });
+                                        viewer.zoomTo();
+                                        viewer.render();
+                                    },
+                                    error: function (hdr, status, err) {
+                                        console.error("Failed to load file " + pdbUri + ": " + err);
+                                    }
                                 });
-                                viewer1.zoomTo();
-                                viewer1.render();
-                                viewer1.zoom(0.8, 2000);
-                            </script>
-                            {% endif %}
-                        </div>
+                            });
+                        </script>
+
+                        {% elif molecule.iupac_name %}
+                        <div id="container-01" class="mol-container" data-cid="{{ molecule.pubchem_id }}"></div>
+                        {% else %}
+                        <div id="container-01" class="mol-container"></div>
+                        <script>
+                            const element1 = document.querySelector('#container-01');
+                            const config1 = { backgroundColor: 'white' };
+                            const viewer1 = $3Dmol.createViewer(element1, config1);
+                            viewer1.addLabel("Structure Not Available", {
+                                position: { x: -5, y: 0, z: 0 },
+                                fontSize: 20,
+                                fontColor: 'red',
+                                backgroundOpacity: 0.5,
+                                backgroundColor: 'blue'
+                            });
+                            viewer1.zoomTo();
+                            viewer1.render();
+                            viewer1.zoom(0.8, 2000);
+                        </script>
+                        {% endif %}
                     </div>
-			<a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
+                </div>
+
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#2d_struc" role="button"
                     aria-expanded="false" aria-controls="2d_struc">
                     <img src="{{url_for('static', filename='images/benzol.svg')}}" alt="Test Tube" width="16"
                         height="16" style="filter: invert(100%) brightness(100%);color: #000;">
@@ -85,230 +128,246 @@
 
                 <div class="collapse" id="2d_struc">
                     {% if molecule.two_d_struc%}
-                    <div class="p-3 border bg-light">
-
-                        <img class="card-img-top"
+                    <div class="p-3 border bg-light text-center">
+                        <img class="img-fluid rounded"
                             src="{{ url_for('static', filename=molecule.two_d_struc.lstrip('static/')) }}"
-                            alt="Benzene molecule 2d structure" width="20">
-
-
+                            alt="Benzene molecule 2D structure" >
                     </div>
+
                     {%else%}
                     <div class="p-3 border bg-light">
-                        <script src="https://www.biblegateway.com/votd/votd.write.callback.js"></script>
-                        <script
-                            src="https://www.biblegateway.com/votd/get/?format=json&version=KJV&callback=BG.votdWriteCallback"></script>
+                        <p>No 2d structure available, please upload one</p>
                     </div>
                     {%endif%}
                 </div>
-                    <!-- Absorption Spectrum -->
-                    <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button" aria-expanded="false" aria-controls="abs_spec">
-                        <i class="bi bi-graph-up"></i> Absorption Spectrum
-                    </a>
-                    <div class="collapse" id="abs_spec">
-                        <div class="p-3 border bg-light">
-                            <h2>Absorption Spectrum</h2>
-                            {% if absorption_plot_div %}
-                            <div class="plot-container">
-                                {{ absorption_plot_div|safe }}
-                            </div>
-                            {% else %}
-                            <p>No absorption data to display.</p>
-                            {% endif %}
+                <!-- Absorption Spectrum -->
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#abs_spec" role="button"
+                    aria-expanded="false" aria-controls="abs_spec">
+                    <i class="bi bi-graph-up"></i> Absorption Spectrum
+                </a>
+                <div class="collapse" id="abs_spec">
+                    <div class="p-3 border bg-light">
+                        <h2>Absorption Spectrum</h2>
+                        {% if absorption_plot_div %}
+                        <div class="plot-container">
+                            {{ absorption_plot_div|safe }}
                         </div>
+                        {% else %}
+                        <p>No absorption data to display.</p>
+                        {% endif %}
                     </div>
-
-                    <!-- ECD Spectrum -->
-                    <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#ecd_spec" role="button" aria-expanded="false" aria-controls="ecd_spec">
-                        <i class="bi bi-graph-up"></i> ECD Spectrum
-                    </a>
-                    <div class="collapse" id="ecd_spec">
-                        <div class="p-3 border bg-light">
-                            <h2>ECD Spectrum</h2>
-                            {% if ecd_plot_div %}
-                            <div class="plot-container">
-                                {{ ecd_plot_div|safe }}
-                            </div>
-                            {% else %}
-                            <p>No ECD data to display.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-    <!-- Details -->
-    <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#details" role="button" aria-expanded="false" aria-controls="details">
-        <i class="bi bi-book-half"></i> Details
-    </a>
-    <div class="collapse" id="details">
-        <div class="p-3 border bg-light">
-            <h2>Details</h2>
-            {% if molecule.posts %}
-            <div class="plot-container">
-                {% for post in molecule.posts %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ post.title }}</h5>
-                            <p class="card-text">{{ post.content|safe }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p>No details to display.</p>
-            {% endif %}
-            {%if current_user.id == molecule.poster.id%}
-            <p>Add post to detail how the molecule data was retrieved</p>
-
-            {%endif%}
-        </div>
-    </div>
-
-                    <h5 class="card-subtitle" style="padding-bottom: 10pt; padding-top: 10pt;">Computed Data</h5>
-                    <!-- g Factor -->
-                    <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#g_fac" role="button" aria-expanded="false" aria-controls="g_fac">
-                        <i class="bi bi-graph-up"></i> g Factor
-                    </a>
-                    <div class="collapse" id="g_fac">
-                        <div class="p-3 border bg-light">
-                            <h2>g Factor</h2>
-                            {% if gfac_plot_div %}
-                            <div class="plot-container">
-                                {{ gfac_plot_div|safe }}
-                            </div>
-                            {% else %}
-                            <p>No g-factor data to display.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Achiral Polarizability -->
-                    <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_a" role="button" aria-expanded="false" aria-controls="alpha_a">
-                        <i class="bi bi-graph-up"></i> Achiral Polarizability
-                    </a>
-                    <div class="collapse" id="alpha_a">
-                        <div class="p-3 border bg-light">
-                            <h2>Achiral Polarizability</h2>
-                            {% if alpha_a_plot_div %}
-                            <div class="plot-container">
-                                {{ alpha_a_plot_div|safe }}
-                            </div>
-                            {% else %}
-                            <p>No achiral polarizability data to display.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Chiral Polarizability -->
-                    <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_c" role="button" aria-expanded="false" aria-controls="alpha_c">
-                        <i class="bi bi-graph-up"></i> Chiral Polarizability
-                    </a>
-                    <div class="collapse" id="alpha_c">
-                        <div class="p-3 border bg-light">
-                            <h2>Chiral Polarizability</h2>
-                            {% if alpha_c_plot_div %}
-                            <div class="plot-container">
-                                {{ alpha_c_plot_div|safe }}
-                            </div>
-                            {% else %}
-                            <p>No chiral polarizability data to display.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <h5 class="card-subtitle" style="padding-bottom: 10pt; padding-top: 10pt;">Data Retrieval</h5>
-
-                    {% if current_user.is_authenticated %}
-                    <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#download_csv" role="button" aria-expanded="false" aria-controls="download_csv">
-                        <i class="bi bi-download"></i> Download Data as CSV
-                    </a>
-                    <div class="collapse" id="download_csv">
-                        <div class="p-3 border bg-light">
-                            <h3>Select Data to Include in CSV:</h3>
-                            <form method="POST" action="{{ url_for('molecule', id=molecule.id) }}">
-                                {{ form.hidden_tag() }}
-                                <div class="form-check">
-                                    {{ form.absorption.label }} {{ form.absorption(class="form-check-input") }}
-                                </div>
-                                <div class="form-check">
-                                    {{ form.ecd.label }} {{ form.ecd(class="form-check-input") }}
-                                </div>
-                                <div class="form-check">
-                                    {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
-                                </div>
-                                <div class="form-check">
-                                    {{ form.alpha_a.label }} {{ form.alpha_a(class="form-check-input") }}
-                                </div>
-                                <div class="form-check">
-                                    {{ form.alpha_c.label }} {{ form.alpha_c(class="form-check-input") }}
-                                </div>
-
-                                {{ form.submit(class="btn btn-primary mt-3") }}
-                            </form>
-                            <br />
-                            <p>
-                                Please cite the following references if you use this data
-                            </p>
-                            <div class="p-3 border bg-light">
-                                {% for pub in pub_metadata %}
-                                <i class="bi bi-book-fill"></i>
-                                <em>{{ pub.title or "Unknown Title" }}</em>
-                                {% if pub.authors %}
-                                {{ pub.authors | join(", ") }}
-                                {% else %}
-                                by Unknown Authors
-                                {% endif %}
-                                <br>
-                                {% else %}
-                                <p>No references available.</p>
-                                {% endfor %}
-                            </div>
-                            <a href="/molecule/{{ molecule.id }}/bibtex" class="btn btn-success" role="button">
-                                Download as BibTeX
-                            </a>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Disabled download button for unauthenticated users -->
-                    <a class="btn btn-outline-light w-100 mb-3 disabled-download" role="button" aria-expanded="false" aria-controls="download_csv">
-                        <i class="bi bi-download"></i> Download Data as CSV
-                    </a>
-                    {% endif %}
                 </div>
+
+                <!-- ECD Spectrum -->
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#ecd_spec" role="button"
+                    aria-expanded="false" aria-controls="ecd_spec">
+                    <i class="bi bi-graph-up"></i> ECD Spectrum
+                </a>
+                <div class="collapse" id="ecd_spec">
+                    <div class="p-3 border bg-light">
+                        <h2>ECD Spectrum</h2>
+                        {% if ecd_plot_div %}
+                        <div class="plot-container">
+                            {{ ecd_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No ECD data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Details -->
+                <a class="btn btn-warning w-100 mb-3" data-bs-toggle="collapse" href="#details" role="button"
+                    aria-expanded="false" aria-controls="details">
+                    <i class="bi bi-book-half"></i> Details
+                </a>
+                <div class="collapse" id="details">
+                    <div class="p-3 border bg-light">
+                        
+                        {% if molecule.posts %}
+                        <div class="card shadow-lg h-100">
+                            {% for post in molecule.posts %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    {% set unique_id = "post-" ~ post.id if post.id else "post-" ~ loop.index %}
+                                    <a class="btn btn-info w-100 mb-3" data-bs-toggle="collapse" href="#{{ unique_id }}"
+                                        role="button" aria-expanded="false" aria-controls="{{ unique_id }}">
+                                        <i class="bi bi-book-half"></i> {{ post.title }}
+                                    </a>
+                                    
+                                    <div class="collapse" id="{{ unique_id }}">
+                                        
+                                        <p class="card-text">{{ post.content|safe }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% else %}
+                        <p>No details to display.</p>
+                        {% endif %}
+                        {%if current_user.id == molecule.poster.id and not molecule.posts %}
+                        <p>Add post to detail how the molecule data was retrieved <a href="{{ url_for('add_post', molecule_id=molecule.id) }}">here</a> </p>
+
+                        {%endif%}
+                    </div>
+                </div>
+
+                <h5 class="card-subtitle" style="padding-bottom: 10pt; padding-top: 10pt;">Computed Data</h5>
+                <!-- g Factor -->
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#g_fac" role="button"
+                    aria-expanded="false" aria-controls="g_fac">
+                    <i class="bi bi-graph-up"></i> g Factor
+                </a>
+                <div class="collapse" id="g_fac">
+                    <div class="p-3 border bg-light">
+                        <h2>g Factor</h2>
+                        {% if gfac_plot_div %}
+                        <div class="plot-container">
+                            {{ gfac_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No g-factor data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Achiral Polarizability -->
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_a" role="button"
+                    aria-expanded="false" aria-controls="alpha_a">
+                    <i class="bi bi-graph-up"></i> Achiral Polarizability
+                </a>
+                <div class="collapse" id="alpha_a">
+                    <div class="p-3 border bg-light">
+                        <h2>Achiral Polarizability</h2>
+                        {% if alpha_a_plot_div %}
+                        <div class="plot-container">
+                            {{ alpha_a_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No achiral polarizability data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Chiral Polarizability -->
+                <a class="btn btn-success w-100 mb-3" data-bs-toggle="collapse" href="#alpha_c" role="button"
+                    aria-expanded="false" aria-controls="alpha_c">
+                    <i class="bi bi-graph-up"></i> Chiral Polarizability
+                </a>
+                <div class="collapse" id="alpha_c">
+                    <div class="p-3 border bg-light">
+                        <h2>Chiral Polarizability</h2>
+                        {% if alpha_c_plot_div %}
+                        <div class="plot-container">
+                            {{ alpha_c_plot_div|safe }}
+                        </div>
+                        {% else %}
+                        <p>No chiral polarizability data to display.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h5 class="card-subtitle" style="padding-bottom: 10pt; padding-top: 10pt;">Data Retrieval</h5>
+
+                {% if current_user.is_authenticated %}
+                <a class="btn btn-outline-light w-100 mb-3" data-bs-toggle="collapse" href="#download_csv" role="button"
+                    aria-expanded="false" aria-controls="download_csv">
+                    <i class="bi bi-download"></i> Download Data as CSV
+                </a>
+                <div class="collapse" id="download_csv">
+                    <div class="p-3 border bg-light">
+                        <h3>Select Data to Include in CSV:</h3>
+                        <form method="POST" action="{{ url_for('molecule', id=molecule.id) }}">
+                            {{ form.hidden_tag() }}
+                            <div class="form-check">
+                                {{ form.absorption.label }} {{ form.absorption(class="form-check-input") }}
+                            </div>
+                            <div class="form-check">
+                                {{ form.ecd.label }} {{ form.ecd(class="form-check-input") }}
+                            </div>
+                            <div class="form-check">
+                                {{ form.gfactor.label }} {{ form.gfactor(class="form-check-input") }}
+                            </div>
+                            <div class="form-check">
+                                {{ form.alpha_a.label }} {{ form.alpha_a(class="form-check-input") }}
+                            </div>
+                            <div class="form-check">
+                                {{ form.alpha_c.label }} {{ form.alpha_c(class="form-check-input") }}
+                            </div>
+
+                            {{ form.submit(class="btn btn-primary mt-3") }}
+                        </form>
+                        <br />
+                        <p>
+                            Please cite the following references if you use this data
+                        </p>
+                        <div class="p-3 border bg-light">
+                            {% for pub in pub_metadata %}
+                            <i class="bi bi-book-fill"></i>
+                            <em>{{ pub.title or "Unknown Title" }}</em>
+                            {% if pub.authors %}
+                            {{ pub.authors | join(", ") }}
+                            {% else %}
+                            by Unknown Authors
+                            {% endif %}
+                            <br>
+                            {% else %}
+                            <p>No references available.</p>
+                            {% endfor %}
+                        </div>
+                        <a href="/molecule/{{ molecule.id }}/bibtex" class="btn btn-success" role="button">
+                            Download as BibTeX
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Disabled download button for unauthenticated users -->
+                <a class="btn btn-outline-light w-100 mb-3 disabled-download" role="button" aria-expanded="false"
+                    aria-controls="download_csv">
+                    <i class="bi bi-download"></i> Download Data as CSV
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
 
 <div class="d-flex justify-content-between mt-4">
-    <a class="btn btn-outline-primary rounded-pill py-2 px-4" href="{{ url_for('all_molecules') }}" style="background-color: #2c3e50; border-color: #34495e; color: white; transition: all 0.3s ease;">
+    <a class="btn btn-outline-primary rounded-pill py-2 px-4" href="{{ url_for('all_molecules') }}"
+        style="background-color: #2c3e50; border-color: #34495e; color: white; transition: all 0.3s ease;">
         <i class="bi bi-list-columns-reverse" style="font-size: 1.2rem;"></i> Back to Molecules List
     </a>
-    <a class="btn btn-outline-danger rounded-pill py-2 px-4" href="{{ url_for('delete_mol', id=molecule.id) }}" style="background-color: #e74c3c; border-color: #c0392b; color: white; transition: all 0.3s ease;">
+    <a class="btn btn-outline-danger rounded-pill py-2 px-4" href="{{ url_for('delete_mol', id=molecule.id) }}"
+        style="background-color: #e74c3c; border-color: #c0392b; color: white; transition: all 0.3s ease;">
         <i class="bi bi-trash" style="font-size: 1.2rem;"></i> Delete Molecule
     </a>
-    <a class="btn btn-outline-success rounded-pill py-2 px-4" href="{{ url_for('update_mol', id=molecule.id) }}" style="background-color: #27ae60; border-color: #2ecc71; color: white; transition: all 0.3s ease;">
+    <a class="btn btn-outline-success rounded-pill py-2 px-4" href="{{ url_for('update_mol', id=molecule.id) }}"
+        style="background-color: #27ae60; border-color: #2ecc71; color: white; transition: all 0.3s ease;">
         <i class="bi bi-pencil" style="font-size: 1.2rem;"></i> Edit Molecule
     </a>
 </div>
 
-    <!-- Plotly and Viewer JS -->
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script>
-        window.onload = function () {
-            var plotDivs = document.querySelectorAll('.plotly-plot');
-            plotDivs.forEach(function (div) {
-                Plotly.Plots.resize(div);
-            });
-        };
+<!-- Plotly and Viewer JS -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    window.onload = function () {
+        var plotDivs = document.querySelectorAll('.plotly-plot');
+        plotDivs.forEach(function (div) {
+            Plotly.Plots.resize(div);
+        });
+    };
 
-        window.onresize = function () {
-            var plotDivs = document.querySelectorAll('.plotly-plot');
-            plotDivs.forEach(function (div) {
-                Plotly.Plots.resize(div);
-            });
-        };
-    </script>
-    <script src="{{ url_for('static', filename='js/molecule_viewer.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
+    window.onresize = function () {
+        var plotDivs = document.querySelectorAll('.plotly-plot');
+        plotDivs.forEach(function (div) {
+            Plotly.Plots.resize(div);
+        });
+    };
+</script>
+<script src="{{ url_for('static', filename='js/molecule_viewer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/myFile.js') }}"></script>
 <style>
     .btn-outline-primary:hover {
         background-color: #34495e;
@@ -328,6 +387,4 @@
         color: white;
     }
 </style>
-
-    {% endblock %}
-
+{% endblock %}
